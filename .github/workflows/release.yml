@@ -1,0 +1,137 @@
+name: Release-Paket erstellen
+
+# Baut bei jedem veröffentlichten Release ein fertiges Deployment-ZIP
+# (inkl. vendor/-Abhängigkeiten und Install-SQL) und hängt es als
+# herunterladbare Datei an den Release an.
+#
+# Auslöser:
+#   - Ein Release wird auf GitHub veröffentlicht (published)
+#   - Manuell über den "Run workflow"-Button (workflow_dispatch)
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Versionsbezeichnung für das Paket (z. B. v1.0.0)"
+        required: false
+        default: "manual"
+
+permissions:
+  contents: write   # nötig, um Dateien an den Release anzuhängen
+
+jobs:
+  build-and-attach:
+    name: Deployment-Paket bauen und anhängen
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Quellcode auschecken
+      - name: Code auschecken
+        uses: actions/checkout@v4
+
+      # 2. PHP einrichten (passend zur composer.json: >= 8.0, wir nutzen 8.2)
+      - name: PHP 8.2 einrichten
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.2"
+          extensions: pdo, pdo_mysql, mbstring, xml, gd, zip, curl, json
+          tools: composer:v2
+          coverage: none
+
+      # 3. Produktions-Abhängigkeiten installieren (ohne Dev-Pakete)
+      - name: Composer-Abhängigkeiten installieren
+        run: composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+
+      # 4. Versionsbezeichnung ermitteln (Tag des Releases oder manuelle Eingabe)
+      - name: Version ermitteln
+        id: version
+        run: |
+          if [ -n "${{ github.event.release.tag_name }}" ]; then
+            echo "tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${{ github.event.inputs.version }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      # 5. .env aus Vorlage erzeugen und einen frischen APP_KEY einsetzen
+      #    (DB-Zugangsdaten bleiben Platzhalter und werden vom Nutzer ausgefüllt)
+      - name: .env-Vorlage vorbereiten
+        run: |
+          APP_KEY=$(php -r "echo bin2hex(random_bytes(32));")
+          cp .env.example .env.dist
+          # APP_KEY in der Vorlage durch einen frisch erzeugten Wert ersetzen
+          sed -i "s|^APP_KEY=.*|APP_KEY=\"${APP_KEY}\"|" .env.dist
+          # Sprechende Platzhalter für die DB-Zugangsdaten setzen
+          sed -i 's|^DB_NAME=.*|DB_NAME="HIER_DB_NAME_EINTRAGEN"|' .env.dist
+          sed -i 's|^DB_USER=.*|DB_USER="HIER_DB_BENUTZER_EINTRAGEN"|' .env.dist
+          sed -i 's|^DB_PASS=.*|DB_PASS="HIER_DB_PASSWORT_EINTRAGEN"|' .env.dist
+          sed -i 's|^APP_NAME=.*|APP_NAME="Muh App"|' .env.dist
+
+      # 6. Deployment-Paket zusammenstellen
+      - name: Deployment-ZIP bauen
+        id: build
+        run: |
+          VERSION="${{ steps.version.outputs.tag }}"
+          STAGE="cattleorg_build/CattleOrg"
+          mkdir -p "$STAGE"
+
+          # Alle relevanten App-Verzeichnisse/Dateien ins Staging kopieren
+          cp -r includes public templates migrations icons vendor "$STAGE"/
+          cp composer.json composer.lock README.md INSTALL_cPanel.md "$STAGE"/ 2>/dev/null || true
+
+          # logs/-Verzeichnis mit Platzhalter anlegen (schreibbar auf dem Server)
+          mkdir -p "$STAGE/logs"
+          touch "$STAGE/logs/.gitkeep"
+
+          # vorbereitete .env (mit frischem APP_KEY) einlegen
+          cp .env.dist "$STAGE/.env"
+          cp .env.example "$STAGE/.env.example"
+
+          # Separate Kopie der Install-SQL neben das ZIP legen (Komfort)
+          cp migrations/install_all.sql "cattleorg_build/CattleOrg_install.sql"
+
+          # ZIP packen
+          cd cattleorg_build
+          ZIP_NAME="CattleOrg_deploy_${VERSION}.zip"
+          zip -r -q "../${ZIP_NAME}" CattleOrg
+          cd ..
+          echo "zip_name=${ZIP_NAME}" >> "$GITHUB_OUTPUT"
+          echo "sql_name=cattleorg_build/CattleOrg_install.sql" >> "$GITHUB_OUTPUT"
+
+          # Prüfsumme erzeugen (Integritätsnachweis)
+          sha256sum "${ZIP_NAME}" > "${ZIP_NAME}.sha256"
+          ls -lh "${ZIP_NAME}"*
+
+      # 7. Schnelle Validierung: ist vendor/autoload.php im Paket?
+      - name: Paket validieren
+        run: |
+          unzip -l "${{ steps.build.outputs.zip_name }}" | grep -q "CattleOrg/vendor/autoload.php" \
+            && echo "OK: vendor/autoload.php enthalten" \
+            || (echo "FEHLER: vendor/ fehlt im Paket" && exit 1)
+          unzip -l "${{ steps.build.outputs.zip_name }}" | grep -q "CattleOrg/migrations/install_all.sql" \
+            && echo "OK: install_all.sql enthalten" \
+            || (echo "FEHLER: install_all.sql fehlt" && exit 1)
+
+      # 8a. An den Release anhängen (nur wenn durch ein Release ausgelöst)
+      - name: Dateien an Release anhängen
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.release.tag_name }}
+          files: |
+            ${{ steps.build.outputs.zip_name }}
+            ${{ steps.build.outputs.zip_name }}.sha256
+            cattleorg_build/CattleOrg_install.sql
+
+      # 8b. Bei manuellem Lauf: als Build-Artefakt bereitstellen
+      - name: Als Artefakt hochladen (manueller Lauf)
+        if: github.event_name == 'workflow_dispatch'
+        uses: actions/upload-artifact@v4
+        with:
+          name: CattleOrg-deploy-${{ steps.version.outputs.tag }}
+          path: |
+            ${{ steps.build.outputs.zip_name }}
+            ${{ steps.build.outputs.zip_name }}.sha256
+            cattleorg_build/CattleOrg_install.sql
+          retention-days: 30

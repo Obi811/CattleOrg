@@ -1,0 +1,32 @@
+{
+  "name": "obi811/cattleorg",
+  "description": "CattleOrg – Mandantenfähige Rinderverwaltung (Multi-Tenant) mit REST-API.",
+  "type": "project",
+  "license": "MIT",
+  "require": {
+    "php": ">=8.0",
+    "ext-pdo": "*",
+    "ext-json": "*",
+    "dompdf/dompdf": "^2.0",
+    "phpoffice/phpspreadsheet": "^1.29"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^10.5"
+  },
+  "autoload": {
+    "psr-4": {
+      "CattleOrg\\": "src/"
+    },
+    "files": [
+      "includes/functions.php"
+    ]
+  },
+  "scripts": {
+    "lint": "find includes public admin exports templates -name '*.php' -print0 | xargs -0 -n1 php -l",
+    "test": "phpunit"
+  },
+  "config": {
+    "optimize-autoloader": true
+  },
+  "minimum-stability": "stable"
+}

@@ -1,0 +1,53 @@
+name: PHP Syntax-Check
+
+# Prueft bei jedem Pull Request sowie bei Pushes auf main alle im Repo
+# versionierten *.php-Dateien mit "php -l" (reiner Syntax-Check, kein Composer).
+# Der Job schlaegt fehl, sobald eine Datei einen Syntaxfehler enthaelt.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  php-syntax-check:
+    name: PHP Syntax-Check
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Code auschecken
+        uses: actions/checkout@v7
+
+      - name: PHP 8.3 einrichten
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.3"
+          coverage: none
+
+      - name: php -l ueber alle versionierten *.php-Dateien
+        run: |
+          echo "PHP-Version: $(php -v | head -n1)"
+          status=0
+          count=0
+          # Nur von Git versionierte .php-Dateien, vendor/ ausgeschlossen.
+          while IFS= read -r file; do
+            case "$file" in
+              vendor/*) continue ;;
+            esac
+            count=$((count + 1))
+            if ! php -l "$file" > /dev/null 2>php_lint_err; then
+              echo "::error file=$file::Syntaxfehler in $file"
+              cat php_lint_err
+              status=1
+            fi
+          done < <(git ls-files '*.php')
+          rm -f php_lint_err
+          echo "Geprueft: $count Datei(en)."
+          if [ "$status" -ne 0 ]; then
+            echo "Mindestens eine Datei enthaelt einen Syntaxfehler."
+            exit 1
+          fi
+          echo "Alle Dateien sind syntaktisch fehlerfrei."

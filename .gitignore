@@ -1,0 +1,30 @@
+# Abhängigkeiten
+/vendor/
+
+# Umgebungs-/Secrets
+.env
+includes/.env
+
+# Betriebsdaten-Migrationen (echte Daten, nicht ins Repo)
+data_migrations/*.sql
+data_migrations/*.docx
+data_migrations/*.pdf
+
+# Logs
+/logs/*
+!/logs/.gitkeep
+*.log
+
+# Build-/Temp-Artefakte
+*.zip
+*.sqlite
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+/tmp/sessions/
+docs/*.pdf
+docs/*.docx
