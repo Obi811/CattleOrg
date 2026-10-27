@@ -176,10 +176,18 @@ CREATE TABLE IF NOT EXISTS `hemmstoff_probes` (
   `probe_date` DATE NOT NULL,
   `status`     ENUM('frei','nicht frei','versendet') NOT NULL,
   `nummer`     VARCHAR(50) NOT NULL,
+  `result_at`  DATETIME DEFAULT NULL,                  -- Zeitpunkt der Ergebniserfassung (Migration 011)
+  `result_by`  INT      DEFAULT NULL,                  -- Benutzer, der das Ergebnis erfasst hat (Migration 011)
+  `sent_at`    DATETIME DEFAULT NULL,                  -- Zeitpunkt des Wegschickens (Migration 011)
+  `sent_by`    INT      DEFAULT NULL,                  -- Benutzer, der den Versand erfasst hat (Migration 011)
   `created_at` TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,
   KEY `idx_hemm_farm_cattle` (`farm_id`,`cattle_id`),
+  KEY `idx_hemm_result_at` (`farm_id`,`result_at`),
+  KEY `idx_hemm_sent_at`   (`farm_id`,`sent_at`),
   CONSTRAINT `fk_hemm_farm`   FOREIGN KEY (`farm_id`)   REFERENCES `farms`(`id`)  ON DELETE CASCADE,
-  CONSTRAINT `fk_hemm_cattle` FOREIGN KEY (`cattle_id`) REFERENCES `cattle`(`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_hemm_cattle` FOREIGN KEY (`cattle_id`) REFERENCES `cattle`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_hemm_result_by` FOREIGN KEY (`result_by`) REFERENCES `users`(`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_hemm_sent_by`   FOREIGN KEY (`sent_by`)   REFERENCES `users`(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 
@@ -312,6 +320,47 @@ CREATE TABLE IF NOT EXISTS `push_log` (
   KEY `idx_push_sent` (`sent_at`),
   CONSTRAINT `fk_push_user` FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_push_farm` FOREIGN KEY (`farm_id`) REFERENCES `farms`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+-- ============ 012_create_cattle_remarks.sql ============
+-- =====================================================================
+-- Migration 012: `cattle_remarks` – Freitext-Bemerkungen je Tier
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS `cattle_remarks` (
+  `id`          INT AUTO_INCREMENT PRIMARY KEY,
+  `farm_id`     INT NOT NULL,
+  `cattle_id`   INT NOT NULL,
+  `remark_date` DATE NOT NULL,
+  `body`        TEXT NOT NULL,
+  `created_by`  INT DEFAULT NULL,
+  `created_at`  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY `idx_remarks_farm_cattle` (`farm_id`,`cattle_id`),
+  KEY `idx_remarks_date`        (`farm_id`,`remark_date`),
+  CONSTRAINT `fk_remarks_farm`    FOREIGN KEY (`farm_id`)   REFERENCES `farms`(`id`)  ON DELETE CASCADE,
+  CONSTRAINT `fk_remarks_cattle`  FOREIGN KEY (`cattle_id`) REFERENCES `cattle`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_remarks_user`    FOREIGN KEY (`created_by`) REFERENCES `users`(`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+
+-- ============ 013_create_followup_dismissals.sql ============
+-- =====================================================================
+-- Migration 013: `followup_dismissals` – "Nachbehandlung nicht noetig"
+-- =====================================================================
+CREATE TABLE IF NOT EXISTS `followup_dismissals` (
+  `id`            INT AUTO_INCREMENT PRIMARY KEY,
+  `farm_id`       INT NOT NULL,
+  `cattle_id`     INT NOT NULL,
+  `treatment_id`  INT NOT NULL,
+  `dismiss_date`  DATE NOT NULL,
+  `dismissed_by`  INT DEFAULT NULL,
+  `created_at`    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY `uq_followup_dismiss` (`farm_id`,`treatment_id`,`dismiss_date`),
+  KEY `idx_followup_farm_date` (`farm_id`,`dismiss_date`),
+  CONSTRAINT `fk_followup_farm`      FOREIGN KEY (`farm_id`)      REFERENCES `farms`(`id`)      ON DELETE CASCADE,
+  CONSTRAINT `fk_followup_cattle`    FOREIGN KEY (`cattle_id`)    REFERENCES `cattle`(`id`)     ON DELETE CASCADE,
+  CONSTRAINT `fk_followup_treatment` FOREIGN KEY (`treatment_id`) REFERENCES `treatments`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_followup_user`      FOREIGN KEY (`dismissed_by`) REFERENCES `users`(`id`)      ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 

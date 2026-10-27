@@ -7,10 +7,19 @@
  */
 
 require_once __DIR__ . '/../includes/bootstrap.php';
+require_once __DIR__ . '/../includes/task_queries.php';
+require_once __DIR__ . '/../includes/task_actions.php';
 
 requireLogin();
 requireFarmAccess();
 $farmId = getCurrentFarmId();
+
+// Gemeinsame POST-Verarbeitung der Aufgaben-Schnellaktionen (leitet selbst um)
+handleTaskPost($db, $farmId, url('index.php'));
+
+$canWrite = hasPermission('treatments.write') && !isDemoBetrieb();
+$canPreg  = hasPermission('pregnancy.write')  && !isDemoBetrieb();
+$heute    = date('Y-m-d');
 
 // Kennzahlen ermitteln (immer mit farm_id gefiltert)
 $stats = [];
@@ -45,8 +54,8 @@ $stats['behandlungen_30'] = (int) $stmt->fetchColumn();
 
 // Letzte Behandlungen
 $stmt = $db->prepare(
-    'SELECT t.treatment_date, t.medication, t.type, c.ear_tag
-     FROM treatments t JOIN cattle c ON c.id = t.cattle_id
+    'SELECT t.treatment_date, t.medication, t.type, c.ear_tag, c.id AS cattle_id
+     FROM treatments t JOIN cattle c ON c.id = t.cattle_id AND c.farm_id = t.farm_id
      WHERE t.farm_id = :f
      ORDER BY t.treatment_date DESC, t.id DESC
      LIMIT 8'
@@ -80,6 +89,19 @@ $stmt = $db->prepare('SELECT COUNT(*) FROM hemmstoff_probes WHERE farm_id = :f A
 $stmt->execute([':f' => $farmId]);
 $stats['hemmstoff_offen'] = (int) $stmt->fetchColumn();
 
+// --- Aufgaben fuer die getrennten Aufgaben-Karten laden (gleiche Logik wie todo_list.php) ---
+$tasks = loadTasks($db, $farmId);
+$nachbehandlungen = $tasks['nachbehandlungen'];
+$vorbehandlungen  = $tasks['vorbehandlungen'];
+$hemmFaellig      = $tasks['hemm_faellig'];
+$hemmSentToday    = $tasks['hemm_sent_today'];
+$hemmVersendet    = $tasks['hemm_versendet'];
+$hemmResultToday  = $tasks['hemm_result_today'];
+$traechtigOffen   = $tasks['traechtig_offen'];
+$traechtigToday   = $tasks['traechtig_today'];
+$offenGesamt = $tasks['counts']['nachbehandlungen'] + $tasks['counts']['hemm_faellig']
+             + $tasks['counts']['hemm_versendet'] + $tasks['counts']['traechtig_offen'];
+
 $pageTitle = 'Start';
 require_once __DIR__ . '/../templates/header.php';
 ?>
@@ -90,21 +112,21 @@ require_once __DIR__ . '/../templates/header.php';
     <?php endif; ?>
 </div>
 
-<?php $aufgabenGesamt = $stats['weiterbehandlungen'] + $stats['offene_traechtigkeit'] + $stats['hemmstoff_offen']; ?>
-<div class="card mb-4 border-primary">
-    <div class="card-body d-flex flex-wrap justify-content-between align-items-center gap-2">
-        <div>
-            <h2 class="h5 mb-1"><i class="bi bi-list-check text-primary"></i> Ueberblick / Aufgaben</h2>
-            <div class="d-flex flex-wrap gap-3 small">
-                <span><i class="bi bi-arrow-repeat text-warning"></i> Weiterbehandlungen: <strong><?= $stats['weiterbehandlungen'] ?></strong></span>
-                <span><i class="bi bi-exclamation-triangle-fill text-danger"></i> Tiere in Wartezeit: <strong><?= $stats['in_wartezeit'] ?></strong></span>
-                <span><i class="bi bi-droplet text-info"></i> Hemmstoffproben offen: <strong><?= $stats['hemmstoff_offen'] ?></strong></span>
-                <span><i class="bi bi-hourglass-split text-secondary"></i> Offene Traechtigkeit: <strong><?= $stats['offene_traechtigkeit'] ?></strong></span>
-            </div>
-        </div>
-        <a class="btn btn-primary" href="<?= e(url('todo_list.php')) ?>"><i class="bi bi-list-check"></i> Zu den Aufgaben</a>
-    </div>
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
+    <h2 class="h5 mb-0"><i class="bi bi-list-check text-primary"></i> Aufgaben <span class="badge bg-secondary"><?= $offenGesamt ?></span></h2>
+    <a class="btn btn-outline-primary btn-sm" href="<?= e(url('todo_list.php')) ?>"><i class="bi bi-list-check"></i> Alle Aufgaben</a>
 </div>
+
+<?php if ($offenGesamt === 0 && empty($hemmSentToday) && empty($hemmResultToday) && empty($traechtigToday)): ?>
+    <div class="card mb-4"><div class="card-body">
+        <p class="text-muted mb-0"><i class="bi bi-check2-circle text-success"></i> Aktuell keine offenen Aufgaben.</p>
+    </div></div>
+<?php else: ?>
+    <?php
+    // Jedes Thema als eigene, klar getrennte Karte mit Inline-Erfassung
+    require __DIR__ . '/../templates/task_cards.php';
+    ?>
+<?php endif; ?>
 
 <div class="row g-3 mb-4">
     <div class="col-6 col-md-3">
@@ -158,7 +180,7 @@ require_once __DIR__ . '/../templates/header.php';
                 <ul class="list-group list-group-flush">
                     <?php foreach ($lastTreatments as $t): ?>
                         <li class="list-group-item d-flex justify-content-between">
-                            <span><?= e(formatEarTag($t['ear_tag'])) ?> &ndash; <?= e($t['medication']) ?> <small class="text-muted">(<?= e($t['type']) ?>)</small></span>
+                            <span><?= cattleLink((int) $t['cattle_id'], $t['ear_tag']) ?> &ndash; <?= e($t['medication']) ?> <small class="text-muted">(<?= e($t['type']) ?>)</small></span>
                             <span class="text-muted"><?= e($t['treatment_date']) ?></span>
                         </li>
                     <?php endforeach; ?>

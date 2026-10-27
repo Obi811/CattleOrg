@@ -28,6 +28,18 @@ if (!$cattle) {
 // Globaler Medikamentenkatalog
 $meds = $db->query('SELECT name FROM medications ORDER BY name')->fetchAll(PDO::FETCH_COLUMN);
 
+// Vorbelegung aus der Aufgabenliste ("Ja, nachbehandeln"): Medikament, Dosierung, Art
+// uebernehmen, damit die gestrige Behandlung schnell wiederholt werden kann.
+$prefillMed  = (string) ($_GET['medication'] ?? '');
+$prefillDos  = (string) ($_GET['dosage'] ?? '');
+$prefillType = (string) ($_GET['type'] ?? '');
+if ($prefillMed !== '' && !in_array($prefillMed, $meds, true)) {
+    $prefillMed = ''; // nur gueltige Medikamente vorbelegen
+}
+if ($prefillType !== '' && !in_array($prefillType, treatmentTypes(), true)) {
+    $prefillType = '';
+}
+
 $errors = [];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -82,18 +94,18 @@ require_once __DIR__ . '/../templates/header.php';
             <label class="form-label">Medikament *</label>
             <select name="medication" class="form-select" required>
                 <option value="">-- waehlen --</option>
-                <?php foreach ($meds as $m): ?><option value="<?= e($m) ?>"><?= e($m) ?></option><?php endforeach; ?>
+                <?php foreach ($meds as $m): ?><option value="<?= e($m) ?>"<?= $m === $prefillMed ? ' selected' : '' ?>><?= e($m) ?></option><?php endforeach; ?>
             </select>
         </div>
         <div class="mb-3">
             <label class="form-label">Art</label>
             <select name="type" class="form-select">
-                <?php foreach (treatmentTypes() as $t): ?><option value="<?= e($t) ?>"><?= e($t) ?></option><?php endforeach; ?>
+                <?php foreach (treatmentTypes() as $t): ?><option value="<?= e($t) ?>"<?= $t === $prefillType ? ' selected' : '' ?>><?= e($t) ?></option><?php endforeach; ?>
             </select>
         </div>
         <div class="mb-3">
             <label class="form-label">Dosierung</label>
-            <input type="text" name="dosage" class="form-control">
+            <input type="text" name="dosage" value="<?= e($prefillDos) ?>" class="form-control">
         </div>
         <div class="mb-3">
             <label class="form-label">Notiz</label>

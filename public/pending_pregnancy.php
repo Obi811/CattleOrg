@@ -45,7 +45,7 @@ require_once __DIR__ . '/../templates/header.php';
                 <tr><td colspan="5" class="text-center text-muted py-4">Keine offenen Kontrollen.</td></tr>
             <?php else: foreach ($rows as $r): ?>
                 <tr>
-                    <td><a href="<?= e(url('cattle_show.php')) ?>?id=<?= (int) $r['id'] ?>"><?= e(formatEarTag($r['ear_tag'])) ?></a></td>
+                    <td><?= cattleLink((int) $r['id'], $r['ear_tag']) ?></td>
                     <td><?= e($r['last_insem']) ?></td>
                     <td><?= e($r['bull_name']) ?></td>
                     <td><span class="badge bg-<?= $r['tage'] > 42 ? 'warning text-dark' : 'secondary' ?>"><?= (int) $r['tage'] ?> Tage</span></td>
