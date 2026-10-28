@@ -29,7 +29,7 @@ jobs:
     steps:
       # 1. Quellcode auschecken
       - name: Code auschecken
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # 2. PHP einrichten (passend zur composer.json: >= 8.0, wir nutzen 8.2)
       - name: PHP 8.2 einrichten
