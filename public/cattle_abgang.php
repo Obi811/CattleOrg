@@ -39,7 +39,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (empty($errors)) {
-        // Notiz mit Grund an die vorhandenen Notizen anhaengen (falls Spalte vorhanden ist,
+        // Notiz mit Grund an die vorhandenen Notizen anhängen (falls Spalte vorhanden ist,
         // wird der Grund als Behandlungsnotiz gespeichert - hier nur informativ in Flash).
         if ($art === 'verendung') {
             $upd = $db->prepare(
@@ -55,7 +55,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $msg = 'Abgang gemeldet - Tier wurde auf "Inaktiv" gesetzt.';
         }
 
-        // Offene Stallhistorie schliessen (aktuellen Stallaufenthalt beenden)
+        // Offene Stallhistorie schließen (aktuellen Stallaufenthalt beenden)
         $closeStall = $db->prepare(
             'UPDATE stall_history SET end_date = :d WHERE cattle_id = :id AND farm_id = :f AND end_date IS NULL'
         );

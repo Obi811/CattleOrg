@@ -2,12 +2,12 @@
 /**
  * public/todo_list.php
  * -----------------------------------------------------------------------------
- * Aufgaben-/Erinnerungsuebersicht. Jedes Thema als eigene, klar getrennte
+ * Aufgaben-/Erinnerungsübersicht. Jedes Thema als eigene, klar getrennte
  * Karte mit Inline-Erfassung direkt aus der Liste (mobil-tauglich):
- *   1. Nachbehandlungen (gestern behandelt) – heute nachbehandeln? Ja / Nicht noetig
- *   2. Hemmstoffprobe faellig – direkt "weggeschickt" + laufende Nummer erfassen
+ *   1. Nachbehandlungen (gestern behandelt) – heute nachbehandeln? Ja / Nicht nötig
+ *   2. Hemmstoffprobe fällig – direkt "weggeschickt" + laufende Nummer erfassen
  *   3. Hemmstoffproben verschickt – Ergebnis frei / nicht frei vor Ort erfassen
- *   4. Traechtigkeitskontrollen – Ergebnis traechtig / nicht traechtig vor Ort
+ *   4. Trächtigkeitskontrollen – Ergebnis trächtig / nicht trächtig vor Ort
  * Alles betriebsbezogen. Abfragen/Aktionen liegen in includes/task_*.php.
  */
 
@@ -34,6 +34,7 @@ $hemmVersendet    = $tasks['hemm_versendet'];
 $hemmResultToday  = $tasks['hemm_result_today'];
 $traechtigOffen   = $tasks['traechtig_offen'];
 $traechtigToday   = $tasks['traechtig_today'];
+$letzteBehandlungen = $tasks['letzte_behandlungen'];
 
 $offenGesamt = $tasks['counts']['nachbehandlungen'] + $tasks['counts']['hemm_faellig']
              + $tasks['counts']['hemm_versendet'] + $tasks['counts']['traechtig_offen'];
@@ -43,7 +44,7 @@ $heute = date('Y-m-d');
 $pageTitle = 'Aufgaben';
 require_once __DIR__ . '/../templates/header.php';
 ?>
-<h1 class="h3 mb-3">Aufgaben &amp; Ueberblick <span class="badge bg-secondary"><?= $offenGesamt ?></span></h1>
+<h1 class="h3 mb-3">Aufgaben &amp; Überblick <span class="badge bg-secondary"><?= $offenGesamt ?></span></h1>
 
 <?php if ($offenGesamt === 0 && empty($hemmSentToday) && empty($hemmResultToday) && empty($traechtigToday)): ?>
     <div class="card"><div class="card-body">
@@ -54,6 +55,9 @@ require_once __DIR__ . '/../templates/header.php';
 <?php
 // Gemeinsame Aufgaben-Karten (werden auch auf dem Dashboard eingebunden)
 require __DIR__ . '/../templates/task_cards.php';
+
+// Thema "Letzte Behandlungen" (letzte 7 Tage) – hier dauerhaft ausgeklappt
+require __DIR__ . '/../templates/recent_treatments.php';
 ?>
 
 <?php require_once __DIR__ . '/../templates/footer.php'; ?>

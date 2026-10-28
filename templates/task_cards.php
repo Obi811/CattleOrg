@@ -49,9 +49,9 @@ if (!isset($nachbehandlungen)) { return; }
                             <?= csrfField() ?>
                             <input type="hidden" name="action" value="weiterbehandeln">
                             <input type="hidden" name="treatment_id" value="<?= (int) $w['id'] ?>">
-                            <button class="btn btn-outline-success btn-sm" title="Gestrige Behandlung 1:1 fuer heute uebernehmen"
-                                onclick="return confirm('Gestrige Behandlung unveraendert fuer heute uebernehmen?');">
-                                <i class="bi bi-copy"></i> Uebernehmen
+                            <button class="btn btn-outline-success btn-sm" title="Gestrige Behandlung 1:1 für heute übernehmen"
+                                onclick="return confirm('Gestrige Behandlung unverändert für heute übernehmen?');">
+                                <i class="bi bi-copy"></i> Übernehmen
                             </button>
                         </form>
                         <form method="post" class="d-inline">
@@ -59,8 +59,8 @@ if (!isset($nachbehandlungen)) { return; }
                             <input type="hidden" name="action" value="followup_dismiss">
                             <input type="hidden" name="treatment_id" value="<?= (int) $w['id'] ?>">
                             <button class="btn btn-outline-secondary btn-sm"
-                                onclick="return confirm('Keine Nachbehandlung noetig? Vorschlag fuer heute ausblenden.');">
-                                <i class="bi bi-x-lg"></i> Nicht noetig
+                                onclick="return confirm('Keine Nachbehandlung nötig? Vorschlag für heute ausblenden.');">
+                                <i class="bi bi-x-lg"></i> Nicht nötig
                             </button>
                         </form>
                     </div>
@@ -72,7 +72,7 @@ if (!isset($nachbehandlungen)) { return; }
 </div>
 <?php endif; ?>
 
-<!-- ================= 2. Hemmstoffprobe faellig ================= -->
+<!-- ================= 2. Hemmstoffprobe fällig ================= -->
 <?php if (!empty($hemmFaellig) || !empty($hemmSentToday)): ?>
 <div class="card mb-4 shadow-sm">
     <div class="card-header bg-info-subtle fw-semibold">
@@ -143,9 +143,9 @@ if (!isset($nachbehandlungen)) { return; }
                     <input type="hidden" name="action" value="hemm_result">
                     <input type="hidden" name="probe_id" value="<?= (int) $r['id'] ?>">
                     <button name="new_status" value="frei" class="btn btn-success btn-sm"
-                        onclick="return confirm('Ergebnis fuer Probe <?= e($r['nummer']) ?>: frei?');"><i class="bi bi-check-lg"></i> frei</button>
+                        onclick="return confirm('Ergebnis für Probe <?= e($r['nummer']) ?>: frei?');"><i class="bi bi-check-lg"></i> frei</button>
                     <button name="new_status" value="nicht frei" class="btn btn-danger btn-sm"
-                        onclick="return confirm('Ergebnis fuer Probe <?= e($r['nummer']) ?>: nicht frei?');"><i class="bi bi-x-lg"></i> nicht frei</button>
+                        onclick="return confirm('Ergebnis für Probe <?= e($r['nummer']) ?>: nicht frei?');"><i class="bi bi-x-lg"></i> nicht frei</button>
                 </form>
                 <?php endif; ?>
             </li>
@@ -167,11 +167,11 @@ if (!isset($nachbehandlungen)) { return; }
 </div>
 <?php endif; ?>
 
-<!-- ================= 4. Traechtigkeitskontrollen ================= -->
+<!-- ================= 4. Trächtigkeitskontrollen ================= -->
 <?php if (!empty($traechtigOffen) || !empty($traechtigToday)): ?>
 <div class="card mb-4 shadow-sm">
     <div class="card-header fw-semibold">
-        <i class="bi bi-hourglass-split"></i> Traechtigkeitskontrollen
+        <i class="bi bi-hourglass-split"></i> Trächtigkeitskontrollen
         <span class="badge bg-secondary ms-1"><?= count($traechtigOffen) ?></span>
     </div>
     <ul class="list-group list-group-flush">
@@ -188,9 +188,9 @@ if (!isset($nachbehandlungen)) { return; }
                         <input type="hidden" name="action" value="preg_result">
                         <input type="hidden" name="cattle_id" value="<?= (int) $r['id'] ?>">
                         <button name="result" value="+" class="btn btn-success btn-sm"
-                            onclick="return confirm('Ergebnis: traechtig?');"><i class="bi bi-check-lg"></i> traechtig</button>
+                            onclick="return confirm('Ergebnis: trächtig?');"><i class="bi bi-check-lg"></i> trächtig</button>
                         <button name="result" value="-" class="btn btn-outline-danger btn-sm"
-                            onclick="return confirm('Ergebnis: nicht traechtig?');"><i class="bi bi-x-lg"></i> nicht traechtig</button>
+                            onclick="return confirm('Ergebnis: nicht trächtig?');"><i class="bi bi-x-lg"></i> nicht trächtig</button>
                     </form>
                     <a class="btn btn-outline-secondary btn-sm" href="<?= e(url('add_pregnancy.php')) ?>?cattle_id=<?= (int) $r['id'] ?>" title="Mit Kommentar erfassen"><i class="bi bi-pencil"></i></a>
                 </div>
@@ -203,7 +203,7 @@ if (!isset($nachbehandlungen)) { return; }
                     <i class="bi bi-check2 text-success"></i>
                     <?= cattleLink((int) $r['cattle_id'], $r['ear_tag']) ?> &ndash;
                     Ergebnis heute:
-                    <strong><?= $r['result'] === '+' ? 'traechtig' : ($r['result'] === '-' ? 'nicht traechtig' : 'unklar') ?></strong>
+                    <strong><?= $r['result'] === '+' ? 'trächtig' : ($r['result'] === '-' ? 'nicht trächtig' : 'unklar') ?></strong>
                     <?= $r['comment'] ? '<span class="text-muted">(' . e($r['comment']) . ')</span>' : '' ?>
                 </span>
                 <span class="badge bg-<?= $r['result'] === '+' ? 'success' : ($r['result'] === '-' ? 'danger' : 'secondary') ?>"><?= e($r['result']) ?></span>

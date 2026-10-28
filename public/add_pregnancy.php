@@ -2,7 +2,7 @@
 /**
  * public/add_pregnancy.php
  * -----------------------------------------------------------------------------
- * Traechtigkeitskontrolle erfassen. Betriebsbezogen, CSRF-geschuetzt.
+ * Trächtigkeitskontrolle erfassen. Betriebsbezogen, CSRF-geschützt.
  */
 
 require_once __DIR__ . '/../includes/bootstrap.php';
@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Bitte ein Datum eingeben.';
     }
     if (!in_array($result, ['+', '-', '?'], true)) {
-        $errors[] = 'Bitte ein gueltiges Ergebnis waehlen.';
+        $errors[] = 'Bitte ein gültiges Ergebnis wählen.';
     }
 
     if (empty($errors)) {
@@ -48,16 +48,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ':f' => $farmId, ':c' => $cattleId, ':d' => $date,
             ':r' => $result, ':k' => $comment !== '' ? $comment : null,
         ]);
-        flash('success', 'Traechtigkeitskontrolle gespeichert.', 'success');
+        flash('success', 'Trächtigkeitskontrolle gespeichert.', 'success');
         redirect(url('cattle_show.php') . '?id=' . $cattleId);
     }
 }
 
-$pageTitle = 'Traechtigkeitskontrolle';
+$pageTitle = 'Trächtigkeitskontrolle';
 require_once __DIR__ . '/../templates/header.php';
 ?>
 <div class="row justify-content-center"><div class="col-lg-6">
-    <h1 class="h3 mb-3">Traechtigkeitskontrolle &ndash; <?= e(formatEarTag($cattle['ear_tag'])) ?></h1>
+    <h1 class="h3 mb-3">Trächtigkeitskontrolle &ndash; <?= e(formatEarTag($cattle['ear_tag'])) ?></h1>
     <?php foreach ($errors as $err): ?><div class="alert alert-danger"><?= e($err) ?></div><?php endforeach; ?>
     <form method="post" class="card card-body">
         <?= csrfField() ?>
@@ -69,8 +69,8 @@ require_once __DIR__ . '/../templates/header.php';
         <div class="mb-3">
             <label class="form-label">Ergebnis *</label>
             <select name="result" class="form-select" required>
-                <option value="+">+ (traechtig)</option>
-                <option value="-">- (nicht traechtig)</option>
+                <option value="+">+ (trächtig)</option>
+                <option value="-">- (nicht trächtig)</option>
                 <option value="?">? (unklar)</option>
             </select>
         </div>

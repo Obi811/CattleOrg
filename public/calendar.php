@@ -3,7 +3,7 @@
  * public/calendar.php
  * -----------------------------------------------------------------------------
  * Monatskalender mit relevanten Ereignissen (Behandlungen, Besamungen,
- * Traechtigkeitskontrollen) des aktuellen Betriebs. Betriebsbezogen.
+ * Trächtigkeitskontrollen) des aktuellen Betriebs. Betriebsbezogen.
  */
 
 require_once __DIR__ . '/../includes/bootstrap.php';
@@ -49,7 +49,7 @@ $p = $db->prepare('SELECT p.check_date AS d, p.result, c.id AS cattle_id, c.ear_
                    FROM pregnancy_checks p JOIN cattle c ON c.id = p.cattle_id AND c.farm_id = p.farm_id
                    WHERE p.farm_id=:f AND p.check_date BETWEEN :a AND :b');
 $p->execute([':f' => $farmId, ':a' => $first, ':b' => $last]);
-foreach ($p->fetchAll() as $r) { $add($r['d'], (int) $r['cattle_id'], $r['ear_tag'], 'Traechtigkeit: ' . $r['result']); }
+foreach ($p->fetchAll() as $r) { $add($r['d'], (int) $r['cattle_id'], $r['ear_tag'], 'Trächtigkeit: ' . $r['result']); }
 
 // Kalender-Grid aufbauen
 $daysInMonth = (int) date('t', strtotime($first));
@@ -58,7 +58,7 @@ $prevMonth = $month === 1 ? 12 : $month - 1;
 $prevYear  = $month === 1 ? $year - 1 : $year;
 $nextMonth = $month === 12 ? 1 : $month + 1;
 $nextYear  = $month === 12 ? $year + 1 : $year;
-$monthNames = [1=>'Januar','Februar','Maerz','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+$monthNames = [1=>'Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
 
 $pageTitle = 'Kalender';
 require_once __DIR__ . '/../templates/header.php';

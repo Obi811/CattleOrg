@@ -2,9 +2,9 @@
 /**
  * auth.php
  * -----------------------------------------------------------------------------
- * Session-Haertung, Login-Pruefung, System-Admin-Pruefung und CSRF-Schutz.
+ * Session-Härtung, Login-Prüfung, System-Admin-Prüfung und CSRF-Schutz.
  *
- * Wird ueber bootstrap.php eingebunden (nach config.php + functions.php).
+ * Wird über bootstrap.php eingebunden (nach config.php + functions.php).
  */
 
 declare(strict_types=1);
@@ -27,7 +27,7 @@ if (session_status() === PHP_SESSION_NONE) {
         'lifetime' => $lifetime,
         'path'     => '/',
         'domain'   => '',
-        'secure'   => APP_HTTPS,      // nur ueber HTTPS senden, wenn aktiv
+        'secure'   => APP_HTTPS,      // nur über HTTPS senden, wenn aktiv
         'httponly' => true,           // kein JS-Zugriff
         'samesite' => 'Lax',          // CSRF-Mitigation
     ]);
@@ -44,7 +44,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 // ---------------------------------------------------------------------------
-// 2. Login- / Rollen-Pruefungen
+// 2. Login- / Rollen-Prüfungen
 // ---------------------------------------------------------------------------
 
 if (!function_exists('isLoggedIn')) {
@@ -144,7 +144,7 @@ if (!function_exists('csrfToken')) {
 
 if (!function_exists('csrfField')) {
     /**
-     * Gibt ein fertiges Hidden-Input fuer Formulare aus.
+     * Gibt ein fertiges Hidden-Input für Formulare aus.
      */
     function csrfField(): string
     {
@@ -154,7 +154,7 @@ if (!function_exists('csrfField')) {
 
 if (!function_exists('verifyCsrf')) {
     /**
-     * Prueft das uebergebene CSRF-Token gegen die Session.
+     * Prüft das übergebene CSRF-Token gegen die Session.
      */
     function verifyCsrf(?string $token): bool
     {
@@ -166,7 +166,7 @@ if (!function_exists('verifyCsrf')) {
 
 if (!function_exists('requireCsrf')) {
     /**
-     * Erzwingt einen gueltigen CSRF-Token bei POST-Requests.
+     * Erzwingt einen gültigen CSRF-Token bei POST-Requests.
      */
     function requireCsrf(): void
     {
@@ -174,7 +174,7 @@ if (!function_exists('requireCsrf')) {
             $token = $_POST['_csrf'] ?? '';
             if (!verifyCsrf($token)) {
                 http_response_code(419);
-                exit('Sicherheitspruefung fehlgeschlagen (CSRF). Bitte Formular erneut laden.');
+                exit('Sicherheitsprüfung fehlgeschlagen (CSRF). Bitte Formular erneut laden.');
             }
         }
     }

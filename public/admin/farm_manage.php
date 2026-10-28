@@ -33,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $id = (int) ($_POST['farm_id'] ?? 0);
         $upd = $db->prepare('UPDATE farms SET is_active = 1 - is_active WHERE id = :id');
         $upd->execute([':id' => $id]);
-        flash('success', 'Status geaendert.', 'success');
+        flash('success', 'Status geändert.', 'success');
         redirect(url('admin/farm_manage.php'));
     }
 }

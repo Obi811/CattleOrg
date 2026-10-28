@@ -4,8 +4,8 @@
  * -----------------------------------------------------------------------------
  * System-Admin: Detailseite eines Benutzers.
  *   - Stammdaten (Benutzername, E-Mail) bearbeiten
- *   - Betriebszuordnungen verwalten (zuordnen, Rolle aendern, entfernen)
- *   - Benutzer loeschen (mit Schutzregeln, in einer Transaktion)
+ *   - Betriebszuordnungen verwalten (zuordnen, Rolle ändern, entfernen)
+ *   - Benutzer löschen (mit Schutzregeln, in einer Transaktion)
  *
  * Bestehende Muster: requireAdmin(), csrfField()/requireCsrf(), flash(),
  * redirect(url(...)), e(). Kein Framework, kein Router.
@@ -54,11 +54,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = 'Benutzername darf nicht leer sein.';
         }
         if ($email !== '' && !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $errors[] = 'Bitte eine gueltige E-Mail-Adresse eingeben.';
+            $errors[] = 'Bitte eine gültige E-Mail-Adresse eingeben.';
         }
 
         if (empty($errors)) {
-            // Eindeutigkeit Benutzername (ausser dem Benutzer selbst)
+            // Eindeutigkeit Benutzername (außer dem Benutzer selbst)
             $chk = $db->prepare('SELECT COUNT(*) FROM users WHERE username = :u AND id <> :id');
             $chk->execute([':u' => $username, ':id' => $userId]);
             if ((int) $chk->fetchColumn() > 0) {
@@ -66,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
         if (empty($errors) && $email !== '') {
-            // Eindeutigkeit E-Mail (ausser dem Benutzer selbst)
+            // Eindeutigkeit E-Mail (außer dem Benutzer selbst)
             $chk = $db->prepare('SELECT COUNT(*) FROM users WHERE email = :e AND id <> :id');
             $chk->execute([':e' => $email, ':id' => $userId]);
             if ((int) $chk->fetchColumn() > 0) {
@@ -95,7 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $fChk = $db->prepare('SELECT COUNT(*) FROM farms WHERE id = :f');
         $fChk->execute([':f' => $farmId]);
         if ($farmId <= 0 || (int) $fChk->fetchColumn() === 0) {
-            $errors[] = 'Bitte einen gueltigen Betrieb auswaehlen.';
+            $errors[] = 'Bitte einen gültigen Betrieb auswählen.';
         } else {
             // Duplikate vermeiden: vorhandene Zuordnung wird aktualisiert
             $link = $db->prepare(
@@ -108,7 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
     // -------------------------------------------------------------------
-    // Rolle einer Zuordnung aendern
+    // Rolle einer Zuordnung ändern
     // -------------------------------------------------------------------
     } elseif ($action === 'change_role') {
         $fuId = (int) ($_POST['farm_user_id'] ?? 0);
@@ -129,24 +129,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         redirect(url('admin/user_edit.php?id=' . $userId));
 
     // -------------------------------------------------------------------
-    // Benutzer loeschen (mit Schutzregeln, in einer Transaktion)
+    // Benutzer löschen (mit Schutzregeln, in einer Transaktion)
     // -------------------------------------------------------------------
     } elseif ($action === 'delete_user') {
         if ($userId === currentUserId()) {
-            flash('error', 'Sie koennen Ihr eigenes Konto nicht loeschen.', 'danger');
+            flash('error', 'Sie können Ihr eigenes Konto nicht löschen.', 'danger');
             redirect(url('admin/user_edit.php?id=' . $userId));
         }
         if ((int) $user['is_admin'] === 1 && countSystemAdmins($db) <= 1) {
-            flash('error', 'Der letzte System-Admin kann nicht geloescht werden.', 'danger');
+            flash('error', 'Der letzte System-Admin kann nicht gelöscht werden.', 'danger');
             redirect(url('admin/user_edit.php?id=' . $userId));
         }
 
         try {
             $db->beginTransaction();
-            // Abhaengige Datensaetze zuerst entfernen. Die Fremdschluessel sind
-            // zwar ON DELETE CASCADE, wir loeschen aber explizit, um auch bei
+            // Abhängige Datensätze zuerst entfernen. Die Fremdschlüssel sind
+            // zwar ON DELETE CASCADE, wir löschen aber explizit, um auch bei
             // abweichender DB-Konfiguration keinen Fatal Error zu riskieren.
-            // Individuelle Permission-Overrides (haengen an farm_users).
+            // Individuelle Permission-Overrides (hängen an farm_users).
             $db->prepare(
                 'DELETE p FROM permissions p
                  JOIN farm_users fu ON fu.id = p.farm_user_id
@@ -156,7 +156,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $db->prepare('DELETE FROM farm_users WHERE user_id = :u')->execute([':u' => $userId]);
             // API-Tokens
             $db->prepare('DELETE FROM api_tokens WHERE user_id = :u')->execute([':u' => $userId]);
-            // Geraete-Tokens + Push-Log (sofern Tabellen vorhanden)
+            // Geräte-Tokens + Push-Log (sofern Tabellen vorhanden)
             foreach (['device_tokens', 'push_log'] as $optTable) {
                 try {
                     $db->prepare("DELETE FROM {$optTable} WHERE user_id = :u")->execute([':u' => $userId]);
@@ -167,19 +167,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Zuletzt den Benutzer selbst
             $db->prepare('DELETE FROM users WHERE id = :u')->execute([':u' => $userId]);
             $db->commit();
-            flash('success', 'Benutzer wurde geloescht.', 'success');
+            flash('success', 'Benutzer wurde gelöscht.', 'success');
             redirect(url('admin/user_list.php'));
         } catch (PDOException $ex) {
             if ($db->inTransaction()) {
                 $db->rollBack();
             }
-            flash('error', 'Benutzer konnte nicht geloescht werden, da noch abhaengige Daten bestehen.', 'danger');
+            flash('error', 'Benutzer konnte nicht gelöscht werden, da noch abhängige Daten bestehen.', 'danger');
             redirect(url('admin/user_edit.php?id=' . $userId));
         }
     }
 }
 
-// Daten fuer die Anzeige laden
+// Daten für die Anzeige laden
 $stmt = $db->prepare('SELECT * FROM users WHERE id = :id');
 $stmt->execute([':id' => $userId]);
 $user = $stmt->fetch();
@@ -193,7 +193,7 @@ $fuStmt = $db->prepare(
 $fuStmt->execute([':u' => $userId]);
 $assignments = $fuStmt->fetchAll();
 
-// Noch nicht zugeordnete Betriebe (fuer das Dropdown)
+// Noch nicht zugeordnete Betriebe (für das Dropdown)
 $assignedIds = array_map(static fn ($a) => (int) $a['farm_id'], $assignments);
 $allFarms = $db->query('SELECT id, name, is_demo, is_active FROM farms ORDER BY name')->fetchAll();
 $availableFarms = array_filter($allFarms, static fn ($f) => !in_array((int) $f['id'], $assignedIds, true));
@@ -228,15 +228,15 @@ require_once __DIR__ . '/../../templates/header.php';
         </div>
 
         <div class="card card-body border-danger">
-            <h2 class="h6 text-danger">Benutzer loeschen</h2>
-            <p class="small text-muted mb-2">Entfernt den Benutzer samt aller Betriebszuordnungen und Tokens. Das kann nicht rueckgaengig gemacht werden.</p>
-            <form method="post" onsubmit="return confirm('Diesen Benutzer wirklich unwiderruflich loeschen?');">
+            <h2 class="h6 text-danger">Benutzer löschen</h2>
+            <p class="small text-muted mb-2">Entfernt den Benutzer samt aller Betriebszuordnungen und Tokens. Das kann nicht rückgängig gemacht werden.</p>
+            <form method="post" onsubmit="return confirm('Diesen Benutzer wirklich unwiderruflich löschen?');">
                 <?= csrfField() ?>
                 <input type="hidden" name="action" value="delete_user">
                 <input type="hidden" name="user_id" value="<?= (int) $user['id'] ?>">
                 <button class="btn btn-danger btn-sm w-100"
-                    <?= $userId === currentUserId() ? 'disabled title="Eigenes Konto kann nicht geloescht werden"' : '' ?>>
-                    <i class="bi bi-trash"></i> Benutzer loeschen
+                    <?= $userId === currentUserId() ? 'disabled title="Eigenes Konto kann nicht gelöscht werden"' : '' ?>>
+                    <i class="bi bi-trash"></i> Benutzer löschen
                 </button>
             </form>
         </div>
@@ -285,7 +285,7 @@ require_once __DIR__ . '/../../templates/header.php';
                 </table>
             </div>
 
-            <h3 class="h6">Betrieb hinzufuegen</h3>
+            <h3 class="h6">Betrieb hinzufügen</h3>
             <?php if (empty($availableFarms)): ?>
                 <p class="text-muted small mb-0">Der Benutzer ist bereits allen Betrieben zugeordnet.</p>
             <?php else: ?>
@@ -295,7 +295,7 @@ require_once __DIR__ . '/../../templates/header.php';
                     <input type="hidden" name="user_id" value="<?= (int) $user['id'] ?>">
                     <div class="col-sm-6">
                         <select name="farm_id" class="form-select form-select-sm" required>
-                            <option value="">Betrieb waehlen...</option>
+                            <option value="">Betrieb wählen...</option>
                             <?php foreach ($availableFarms as $f): ?>
                                 <option value="<?= (int) $f['id'] ?>"><?= e($f['name']) ?><?= (int) $f['is_demo'] === 1 ? ' (Demo)' : '' ?></option>
                             <?php endforeach; ?>

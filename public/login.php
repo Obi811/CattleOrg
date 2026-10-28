@@ -4,9 +4,9 @@
  * -----------------------------------------------------------------------------
  * Anmeldung. Nach erfolgreichem Login wird die Mandantenzuordnung ausgewertet:
  *   - 0 Betriebe (kein Admin) -> Fehlermeldung
- *   - genau 1 Betrieb         -> automatisch waehlen, weiter zur Tierliste
+ *   - genau 1 Betrieb         -> automatisch wählen, weiter zur Tierliste
  *   - mehrere Betriebe        -> farm_select.php
- * Zusaetzlich: Demo-Button fuer den schreibgeschuetzten Demo-Betrieb.
+ * Zusätzlich: Demo-Button für den schreibgeschützten Demo-Betrieb.
  */
 
 require_once __DIR__ . '/../includes/bootstrap.php';
@@ -16,12 +16,12 @@ if (isLoggedIn() && !empty($_SESSION['current_farm_id'])) {
     redirect(url('index.php'));
 }
 
-/** Gemeinsame Login-Routine: setzt Session + leitet abhaengig von Betrieben um. */
+/** Gemeinsame Login-Routine: setzt Session + leitet abhängig von Betrieben um. */
 function performLogin(PDO $db, array $user): void
 {
     loginUser($user);
 
-    // System-Admin ohne Betriebszuordnung -> Betriebsauswahl (kann jeden waehlen)
+    // System-Admin ohne Betriebszuordnung -> Betriebsauswahl (kann jeden wählen)
     $farms = getUserFarms($db, (int) $user['id']);
 
     if (isAdmin()) {

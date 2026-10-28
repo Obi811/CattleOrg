@@ -3,7 +3,7 @@
  * public/farm_select.php
  * -----------------------------------------------------------------------------
  * Betriebsauswahl / Betriebswechsel. Listet die Betriebe des Users (bzw. alle
- * aktiven Betriebe fuer System-Admins) und setzt den aktiven Mandanten.
+ * aktiven Betriebe für System-Admins) und setzt den aktiven Mandanten.
  */
 
 require_once __DIR__ . '/../includes/bootstrap.php';
@@ -16,7 +16,7 @@ if (isAdmin()) {
     // Admin sieht alle aktiven Betriebe
     $stmt = $db->query('SELECT id, name, is_demo, betriebsnummer FROM farms WHERE is_active = 1 ORDER BY name');
     $farms = $stmt->fetchAll();
-    // Rolle fuer Anzeige
+    // Rolle für Anzeige
     foreach ($farms as &$f) { $f['role'] = 'admin'; }
     unset($f);
 } else {
@@ -30,21 +30,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($farmId > 0 && setCurrentFarm($db, (int) $userId, $farmId)) {
         redirect(url('index.php'));
     }
-    flash('error', 'Auswahl ungueltig oder kein Zugriff auf diesen Betrieb.', 'danger');
+    flash('error', 'Auswahl ungültig oder kein Zugriff auf diesen Betrieb.', 'danger');
     redirect(url('farm_select.php'));
 }
 
-$pageTitle = 'Betrieb waehlen';
+$pageTitle = 'Betrieb wählen';
 require_once __DIR__ . '/../templates/header.php';
 ?>
 <div class="row justify-content-center">
     <div class="col-md-8 col-lg-6">
         <div class="card">
             <div class="card-body">
-                <h1 class="h4 mb-3"><i class="bi bi-buildings"></i> Betrieb waehlen</h1>
+                <h1 class="h4 mb-3"><i class="bi bi-buildings"></i> Betrieb wählen</h1>
                 <?php if (empty($farms)): ?>
                     <div class="alert alert-warning">
-                        Es ist kein Betrieb verfuegbar. Bitte den Betriebsinhaber oder Administrator kontaktieren.
+                        Es ist kein Betrieb verfügbar. Bitte den Betriebsinhaber oder Administrator kontaktieren.
                     </div>
                 <?php else: ?>
                     <div class="list-group">
@@ -60,7 +60,7 @@ require_once __DIR__ . '/../templates/header.php';
                                     <br><small class="text-muted">Rolle: <?= e($farm['role']) ?></small>
                                 </span>
                                 <button type="submit" class="btn btn-primary btn-sm">
-                                    Auswaehlen <i class="bi bi-arrow-right"></i>
+                                    Auswählen <i class="bi bi-arrow-right"></i>
                                 </button>
                             </form>
                         <?php endforeach; ?>

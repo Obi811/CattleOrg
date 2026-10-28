@@ -3,7 +3,7 @@
  * public/cattle_show.php
  * -----------------------------------------------------------------------------
  * Detailansicht eines Tieres inkl. Behandlungen, Besamungen,
- * Traechtigkeitskontrollen und Stallhistorie. Strikt betriebsbezogen.
+ * Trächtigkeitskontrollen und Stallhistorie. Strikt betriebsbezogen.
  */
 
 require_once __DIR__ . '/../includes/bootstrap.php';
@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // --- Bemerkungen: anlegen / loeschen (Berechtigung cattle.write) ---
+    // --- Bemerkungen: anlegen / löschen (Berechtigung cattle.write) ---
     if (hasPermission('cattle.write') && !isDemoBetrieb()) {
         if (isset($_POST['action']) && $_POST['action'] === 'remark_add') {
             $rdate = trim($_POST['remark_date'] ?? '') ?: date('Y-m-d');
@@ -66,7 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $ins->execute([':f' => $farmId, ':c' => $id, ':d' => $rdate, ':b' => $body, ':u' => currentUserId()]);
                 flash('success', 'Bemerkung gespeichert.', 'success');
             } else {
-                flash('error', 'Bitte einen Text fuer die Bemerkung eingeben.', 'danger');
+                flash('error', 'Bitte einen Text für die Bemerkung eingeben.', 'danger');
             }
             redirect(url('cattle_show.php') . '?id=' . $id);
         }
@@ -74,13 +74,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $remarkId = (int) ($_POST['remark_id'] ?? 0);
             $del = $db->prepare('DELETE FROM cattle_remarks WHERE id = :id AND farm_id = :f AND cattle_id = :c');
             $del->execute([':id' => $remarkId, ':f' => $farmId, ':c' => $id]);
-            flash('success', 'Bemerkung geloescht.', 'success');
+            flash('success', 'Bemerkung gelöscht.', 'success');
             redirect(url('cattle_show.php') . '?id=' . $id);
         }
     }
 }
 
-// Zugehoerige Daten (alle mit farm_id gefiltert)
+// Zugehörige Daten (alle mit farm_id gefiltert)
 // Behandlungen inkl. Wartezeiten (Milch/Fleisch) aus dem globalen Medikamentenkatalog
 $tr = $db->prepare(
     'SELECT t.*, m.wz_milk, m.wz_fleisch
@@ -92,13 +92,13 @@ $tr = $db->prepare(
 $tr->execute([':id' => $id, ':f' => $farmId]);
 $treatments = $tr->fetchAll();
 
-// --- Wartezeit-Auswertung: laeuft aktuell noch eine Wartezeit? ---
-$warnhinweis = false;         // true, wenn irgendeine Wartezeit noch laeuft
-$warnEndeMax = null;          // spaetestes Wartezeit-Ende (fuer Anzeige)
+// --- Wartezeit-Auswertung: läuft aktuell noch eine Wartezeit? ---
+$warnhinweis = false;         // true, wenn irgendeine Wartezeit noch läuft
+$warnEndeMax = null;          // spätestes Wartezeit-Ende (für Anzeige)
 $today = new DateTime('today');
 foreach ($treatments as &$t) {
-    $t['wz_ende'] = null;      // Datum, bis zu dem eine Wartezeit laeuft
-    $t['wz_aktiv'] = false;    // laeuft die Wartezeit dieser Behandlung noch?
+    $t['wz_ende'] = null;      // Datum, bis zu dem eine Wartezeit läuft
+    $t['wz_aktiv'] = false;    // läuft die Wartezeit dieser Behandlung noch?
     if (empty($t['treatment_date'])) {
         continue;
     }
@@ -143,8 +143,8 @@ $stallHistory = $st->fetchAll();
 
 // --- Kalbungen / Nachkommen ---
 // Kalbungen sind in diesem System keine eigene Tabelle, sondern ergeben sich aus
-// den Tieren, deren Mutter dieses Tier ist. Verknuepfung ueber mutter_id (FK auf
-// cattle.id) ODER ueber die Ohrmarke (Feld mutter = ear_tag dieses Tieres).
+// den Tieren, deren Mutter dieses Tier ist. Verknüpfung über mutter_id (FK auf
+// cattle.id) ODER über die Ohrmarke (Feld mutter = ear_tag dieses Tieres).
 // Deshalb wurden Kalbungen bisher auf der Profilseite nicht angezeigt – es fehlte
 // schlicht diese Abfrage/Sektion. Beides betriebsbezogen.
 $off = $db->prepare(
@@ -226,7 +226,7 @@ require_once __DIR__ . '/../templates/header.php';
         <div class="card mt-3"><div class="card-body d-grid gap-2">
             <a class="btn btn-outline-success btn-sm" href="<?= e(url('add_treatment.php')) ?>?cattle_id=<?= $id ?>"><i class="bi bi-capsule"></i> Behandlung</a>
             <a class="btn btn-outline-success btn-sm" href="<?= e(url('insemination_add.php')) ?>?cattle_id=<?= $id ?>"><i class="bi bi-gender-female"></i> Besamung</a>
-            <a class="btn btn-outline-success btn-sm" href="<?= e(url('add_pregnancy.php')) ?>?cattle_id=<?= $id ?>"><i class="bi bi-clipboard-check"></i> Traechtigkeitskontrolle</a>
+            <a class="btn btn-outline-success btn-sm" href="<?= e(url('add_pregnancy.php')) ?>?cattle_id=<?= $id ?>"><i class="bi bi-clipboard-check"></i> Trächtigkeitskontrolle</a>
             <a class="btn btn-outline-success btn-sm" href="<?= e(url('change_stall.php')) ?>?cattle_id=<?= $id ?>"><i class="bi bi-house-door"></i> Stallwechsel</a>
         </div></div>
         <?php endif; ?>
@@ -249,7 +249,7 @@ require_once __DIR__ . '/../templates/header.php';
                             <td>
                                 <?php if (!empty($t['wz_ende'])): ?>
                                     <?= e(date('d.m.Y', strtotime($t['wz_ende']))) ?>
-                                    <?php if (!empty($t['wz_aktiv'])): ?><span class="badge bg-danger">laeuft</span><?php else: ?><span class="badge bg-success">frei</span><?php endif; ?>
+                                    <?php if (!empty($t['wz_aktiv'])): ?><span class="badge bg-danger">läuft</span><?php else: ?><span class="badge bg-success">frei</span><?php endif; ?>
                                 <?php else: ?>-<?php endif; ?>
                             </td>
                             <td><small><?= e($t['notes']) ?></small></td>
@@ -272,7 +272,7 @@ require_once __DIR__ . '/../templates/header.php';
         </div></div>
 
         <div class="card mb-3"><div class="card-body">
-            <h2 class="h6">Traechtigkeitskontrollen (<?= count($pregnancy) ?>)</h2>
+            <h2 class="h6">Trächtigkeitskontrollen (<?= count($pregnancy) ?>)</h2>
             <?php if (empty($pregnancy)): ?><p class="text-muted small mb-0">Keine Kontrollen.</p><?php else: ?>
                 <div class="table-responsive"><table class="table table-sm mb-0">
                     <thead><tr><th>Datum</th><th>Ergebnis</th><th>Kommentar</th></tr></thead>
@@ -348,7 +348,7 @@ require_once __DIR__ . '/../templates/header.php';
 
         <div class="card mb-3"><div class="card-body">
             <h2 class="h6">Stallhistorie (<?= count($stallHistory) ?>)</h2>
-            <?php if (empty($stallHistory)): ?><p class="text-muted small mb-0">Keine Eintraege.</p><?php else: ?>
+            <?php if (empty($stallHistory)): ?><p class="text-muted small mb-0">Keine Einträge.</p><?php else: ?>
                 <div class="table-responsive"><table class="table table-sm mb-0">
                     <thead><tr><th>Stall</th><th>Von</th><th>Bis</th></tr></thead>
                     <tbody><?php foreach ($stallHistory as $s): ?>
@@ -371,10 +371,10 @@ require_once __DIR__ . '/../templates/header.php';
                     </div>
                     <div class="col-12 col-sm-7">
                         <label class="form-label mb-0 small">Bemerkung</label>
-                        <input type="text" name="remark_body" class="form-control form-control-sm" maxlength="2000" placeholder="z. B. Beobachtung, Auffaelligkeit ..." required>
+                        <input type="text" name="remark_body" class="form-control form-control-sm" maxlength="2000" placeholder="z. B. Beobachtung, Auffälligkeit ..." required>
                     </div>
                     <div class="col-12 col-sm-2">
-                        <button class="btn btn-outline-primary btn-sm w-100"><i class="bi bi-plus-lg"></i> Hinzufuegen</button>
+                        <button class="btn btn-outline-primary btn-sm w-100"><i class="bi bi-plus-lg"></i> Hinzufügen</button>
                     </div>
                 </form>
             <?php endif; ?>
@@ -397,8 +397,8 @@ require_once __DIR__ . '/../templates/header.php';
                                         <?= csrfField() ?>
                                         <input type="hidden" name="action" value="remark_delete">
                                         <input type="hidden" name="remark_id" value="<?= (int) $r['id'] ?>">
-                                        <button class="btn btn-outline-danger btn-sm" title="Bemerkung loeschen"
-                                            onclick="return confirm('Diese Bemerkung wirklich loeschen?');">
+                                        <button class="btn btn-outline-danger btn-sm" title="Bemerkung löschen"
+                                            onclick="return confirm('Diese Bemerkung wirklich löschen?');">
                                             <i class="bi bi-trash"></i>
                                         </button>
                                     </form>
@@ -411,5 +411,5 @@ require_once __DIR__ . '/../templates/header.php';
         </div></div>
     </div>
 </div>
-<a href="<?= e(url('cattle_list.php')) ?>" class="btn btn-link">&laquo; Zurueck zur Liste</a>
+<a href="<?= e(url('cattle_list.php')) ?>" class="btn btn-link">&laquo; Zurück zur Liste</a>
 <?php require_once __DIR__ . '/../templates/footer.php'; ?>

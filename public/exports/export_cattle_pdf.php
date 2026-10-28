@@ -34,7 +34,7 @@ $cattle = $stmt->fetchAll();
 $farmName = $_SESSION['current_farm_name'] ?? 'Betrieb';
 $generated = date('d.m.Y H:i');
 
-// HTML fuer den PDF-/Druck-Inhalt bauen (REALE Spalten!)
+// HTML für den PDF-/Druck-Inhalt bauen (REALE Spalten!)
 ob_start();
 ?>
 <!DOCTYPE html>

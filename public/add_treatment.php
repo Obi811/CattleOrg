@@ -3,7 +3,7 @@
  * public/add_treatment.php
  * -----------------------------------------------------------------------------
  * Behandlung zu einem Tier erfassen. Medikament wird aus dem GLOBALEN
- * Medikamentenkatalog gewaehlt. Tierzugriff strikt betriebsbezogen.
+ * Medikamentenkatalog gewählt. Tierzugriff strikt betriebsbezogen.
  */
 
 require_once __DIR__ . '/../includes/bootstrap.php';
@@ -15,7 +15,7 @@ $farmId = getCurrentFarmId();
 
 $cattleId = (int) ($_GET['cattle_id'] ?? $_POST['cattle_id'] ?? 0);
 
-// Tier betriebsbezogen pruefen
+// Tier betriebsbezogen prüfen
 $stmt = $db->prepare('SELECT id, ear_tag FROM cattle WHERE id = :id AND farm_id = :f');
 $stmt->execute([':id' => $cattleId, ':f' => $farmId]);
 $cattle = $stmt->fetch();
@@ -29,12 +29,12 @@ if (!$cattle) {
 $meds = $db->query('SELECT name FROM medications ORDER BY name')->fetchAll(PDO::FETCH_COLUMN);
 
 // Vorbelegung aus der Aufgabenliste ("Ja, nachbehandeln"): Medikament, Dosierung, Art
-// uebernehmen, damit die gestrige Behandlung schnell wiederholt werden kann.
+// übernehmen, damit die gestrige Behandlung schnell wiederholt werden kann.
 $prefillMed  = (string) ($_GET['medication'] ?? '');
 $prefillDos  = (string) ($_GET['dosage'] ?? '');
 $prefillType = (string) ($_GET['type'] ?? '');
 if ($prefillMed !== '' && !in_array($prefillMed, $meds, true)) {
-    $prefillMed = ''; // nur gueltige Medikamente vorbelegen
+    $prefillMed = ''; // nur gültige Medikamente vorbelegen
 }
 if ($prefillType !== '' && !in_array($prefillType, treatmentTypes(), true)) {
     $prefillType = '';
@@ -52,10 +52,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $notes = trim($_POST['notes'] ?? '');
 
     if ($medication === '' || !in_array($medication, $meds, true)) {
-        $errors[] = 'Bitte ein gueltiges Medikament aus dem Katalog waehlen.';
+        $errors[] = 'Bitte ein gültiges Medikament aus dem Katalog wählen.';
     }
     if (!in_array($type, treatmentTypes(), true)) {
-        $errors[] = 'Ungueltige Behandlungsart.';
+        $errors[] = 'Ungültige Behandlungsart.';
     }
 
     if (empty($errors)) {
@@ -93,7 +93,7 @@ require_once __DIR__ . '/../templates/header.php';
         <div class="mb-3">
             <label class="form-label">Medikament *</label>
             <select name="medication" class="form-select" required>
-                <option value="">-- waehlen --</option>
+                <option value="">-- wählen --</option>
                 <?php foreach ($meds as $m): ?><option value="<?= e($m) ?>"<?= $m === $prefillMed ? ' selected' : '' ?>><?= e($m) ?></option><?php endforeach; ?>
             </select>
         </div>

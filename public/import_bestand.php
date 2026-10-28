@@ -2,7 +2,7 @@
 /**
  * public/import_bestand.php
  * -----------------------------------------------------------------------------
- * CSV-Import des Tierbestands. Behebt die Altlasten-Sicherheitsluecke:
+ * CSV-Import des Tierbestands. Behebt die Altlasten-Sicherheitslücke:
  * HIER mit Authentifizierung, import.access-Berechtigung, Demo-Sperre und CSRF.
  * Alle importierten Tiere werden serverseitig dem aktuellen Betrieb zugeordnet.
  *
@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     requireCsrf();
 
     if (!isset($_FILES['csv']) || $_FILES['csv']['error'] !== UPLOAD_ERR_OK) {
-        $errors[] = 'Bitte eine gueltige CSV-Datei hochladen.';
+        $errors[] = 'Bitte eine gültige CSV-Datei hochladen.';
     } else {
         $tmp = $_FILES['csv']['tmp_name'];
         $handle = fopen($tmp, 'r');
@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $earTag = normalizeEarTag($data['ear_tag'] ?? '');
                     if ($earTag === '') { $skipped++; continue; }
 
-                    // Duplikate im Betrieb ueberspringen
+                    // Duplikate im Betrieb überspringen
                     $chk = $db->prepare('SELECT COUNT(*) FROM cattle WHERE farm_id=:f AND ear_tag=:e');
                     $chk->execute([':f' => $farmId, ':e' => $earTag]);
                     if ((int) $chk->fetchColumn() > 0) { $skipped++; continue; }
@@ -75,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 $db->commit();
                 $result = ['imported' => $imported, 'skipped' => $skipped];
-                flash('success', "Import abgeschlossen: $imported angelegt, $skipped uebersprungen.", 'success');
+                flash('success', "Import abgeschlossen: $imported angelegt, $skipped übersprungen.", 'success');
             } catch (Throwable $ex) {
                 $db->rollBack();
                 $errors[] = 'Import fehlgeschlagen in Zeile ' . $line . '.';
@@ -93,7 +93,7 @@ require_once __DIR__ . '/../templates/header.php';
     <?php foreach ($errors as $err): ?><div class="alert alert-danger"><?= e($err) ?></div><?php endforeach; ?>
     <?php if ($result): ?>
         <div class="alert alert-success">
-            <?= (int) $result['imported'] ?> Tiere importiert, <?= (int) $result['skipped'] ?> uebersprungen.
+            <?= (int) $result['imported'] ?> Tiere importiert, <?= (int) $result['skipped'] ?> übersprungen.
         </div>
     <?php endif; ?>
     <div class="card card-body">

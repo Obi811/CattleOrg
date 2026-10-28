@@ -2,38 +2,38 @@
 /**
  * includes/task_queries.php
  * -----------------------------------------------------------------------------
- * Zentrale Abfragen fuer die Aufgaben-/Ueberblicksansicht. Wird sowohl vom
+ * Zentrale Abfragen für die Aufgaben-/Überblicksansicht. Wird sowohl vom
  * Dashboard (index.php) als auch von der Aufgabenliste (todo_list.php)
  * eingebunden, damit beide dieselbe Logik verwenden.
  *
- * Alle Abfragen sind strikt auf den uebergebenen Betrieb (farm_id) beschraenkt
- * und verwenden ausschliesslich Prepared Statements.
+ * Alle Abfragen sind strikt auf den übergebenen Betrieb (farm_id) beschränkt
+ * und verwenden ausschließlich Prepared Statements.
  */
 
 declare(strict_types=1);
 
 if (!function_exists('loadTasks')) {
     /**
-     * Laedt alle Aufgaben-Datensaetze des Betriebs gruppiert nach Thema.
+     * Laedt alle Aufgaben-Datensätze des Betriebs gruppiert nach Thema.
      *
-     * Rueckgabe (Array):
-     *   'nachbehandlungen'   => offene Nachbehandlungs-Vorschlaege (gestern behandelt)
+     * Rückgabe (Array):
+     *   'nachbehandlungen'   => offene Nachbehandlungs-Vorschläge (gestern behandelt)
      *   'vorbehandlungen'    => Kontext je cattle_id (letzte 14 Tage)
-     *   'hemm_faellig'       => Hemmstoffprobe faellig (Wartezeit abgelaufen, nicht verschickt)
+     *   'hemm_faellig'       => Hemmstoffprobe fällig (Wartezeit abgelaufen, nicht verschickt)
      *   'hemm_sent_today'    => heute als "weggeschickt" markierte Proben (erledigt heute)
      *   'hemm_versendet'     => verschickt, Ergebnis ausstehend
      *   'hemm_result_today'  => heute erfasstes Ergebnis (erledigt heute)
-     *   'traechtig_offen'    => offene Traechtigkeitskontrollen
+     *   'traechtig_offen'    => offene Trächtigkeitskontrollen
      *   'traechtig_today'    => heute erfasste Kontrollen (erledigt heute)
-     *   'counts'             => Zaehler je Thema (nur offene Aufgaben)
+     *   'counts'             => Zähler je Thema (nur offene Aufgaben)
      */
     function loadTasks(PDO $db, int $farmId): array
     {
         $gestern = (new DateTime('yesterday'))->format('Y-m-d');
         $vor14   = (new DateTime('-14 days'))->format('Y-m-d');
 
-        // --- 1. Nachbehandlungen: gestern behandelt (ausser Trockenstellen),
-        //        heute noch nicht behandelt und nicht als "nicht noetig" markiert ---
+        // --- 1. Nachbehandlungen: gestern behandelt (außer Trockenstellen),
+        //        heute noch nicht behandelt und nicht als "nicht nötig" markiert ---
         $wsql = "SELECT t.id, t.cattle_id, t.treatment_date, t.type, t.medication, t.dosage, t.notes, c.ear_tag
                  FROM treatments t
                  JOIN cattle c ON c.id = t.cattle_id AND c.farm_id = t.farm_id
@@ -68,7 +68,7 @@ if (!function_exists('loadTasks')) {
             }
         }
 
-        // --- 2. Hemmstoffprobe faellig: Wartezeit (wz_milk) abgelaufen, keine "frei"-Probe danach,
+        // --- 2. Hemmstoffprobe fällig: Wartezeit (wz_milk) abgelaufen, keine "frei"-Probe danach,
         //        noch keine verschickte Probe offen ---
         $hsql = "
             SELECT c.id, c.ear_tag, t.treatment_date, m.wz_milk,
@@ -127,7 +127,7 @@ if (!function_exists('loadTasks')) {
         $hrt->execute([':f' => $farmId]);
         $hemmResultToday = $hrt->fetchAll();
 
-        // --- 4. Offene Traechtigkeitskontrollen (>= 35 Tage seit Besamung) ---
+        // --- 4. Offene Trächtigkeitskontrollen (>= 35 Tage seit Besamung) ---
         $psql = "
             SELECT c.id, c.ear_tag, i.date AS last_insem, DATEDIFF(CURDATE(), i.date) AS tage
             FROM cattle c
@@ -142,7 +142,7 @@ if (!function_exists('loadTasks')) {
         $ps->execute([':f1' => $farmId, ':f2' => $farmId]);
         $traechtigOffen = $ps->fetchAll();
 
-        // Heute erfasste Traechtigkeitskontrollen (erledigt heute)
+        // Heute erfasste Trächtigkeitskontrollen (erledigt heute)
         $pt = $db->prepare(
             "SELECT p.id, p.result, p.comment, p.created_at, c.ear_tag, c.id AS cattle_id
              FROM pregnancy_checks p JOIN cattle c ON c.id = p.cattle_id AND c.farm_id = p.farm_id
@@ -151,6 +151,42 @@ if (!function_exists('loadTasks')) {
         );
         $pt->execute([':f' => $farmId]);
         $traechtigToday = $pt->fetchAll();
+
+        // --- 5. Letzte Behandlungen (Kontext, keine offene Aufgabe): letzte 7 Tage, max. 20 ---
+        //        Wartezeit wie gewohnt: Behandlungsdatum + max(wz_milk, wz_fleisch) aus der
+        //        ueber den Namen verknuepften Medikamententabelle. Die Wartezeit wird ueber eine
+        //        Unterabfrage ermittelt (max je Medikamentenname), damit mehrfach vorhandene
+        //        Medikamentennamen die Trefferliste nicht vervielfachen.
+        $lb = $db->prepare(
+            "SELECT t.id, t.cattle_id, t.treatment_date, t.type, t.medication, t.dosage, c.ear_tag,
+                    (SELECT GREATEST(COALESCE(MAX(m.wz_milk),0), COALESCE(MAX(m.wz_fleisch),0))
+                       FROM medications m WHERE m.name = t.medication) AS wz_max
+             FROM treatments t
+             JOIN cattle c ON c.id = t.cattle_id AND c.farm_id = t.farm_id
+             WHERE t.farm_id = :f AND t.treatment_date >= (CURDATE() - INTERVAL 7 DAY)
+             ORDER BY t.treatment_date DESC, t.id DESC
+             LIMIT 20"
+        );
+        $lb->execute([':f' => $farmId]);
+        $letzteBehandlungen = $lb->fetchAll();
+
+        // Wartezeit-Ende und "noch laufend?" je Zeile in PHP ableiten (einheitliche Logik)
+        $heuteDt = new DateTime('today');
+        $lbWartezeitAktiv = 0;
+        foreach ($letzteBehandlungen as $k => $r) {
+            $wz = (int) $r['wz_max'];
+            $ende = null;
+            $aktiv = false;
+            if ($wz > 0) {
+                $ende = (new DateTime($r['treatment_date']))->modify("+{$wz} days");
+                $aktiv = $ende >= $heuteDt;
+            }
+            $letzteBehandlungen[$k]['wartezeit_ende']  = $ende ? $ende->format('Y-m-d') : null;
+            $letzteBehandlungen[$k]['wartezeit_aktiv'] = $aktiv;
+            if ($aktiv) {
+                $lbWartezeitAktiv++;
+            }
+        }
 
         return [
             'nachbehandlungen'  => $nachbehandlungen,
@@ -161,11 +197,14 @@ if (!function_exists('loadTasks')) {
             'hemm_result_today' => $hemmResultToday,
             'traechtig_offen'   => $traechtigOffen,
             'traechtig_today'   => $traechtigToday,
+            'letzte_behandlungen' => $letzteBehandlungen,
             'counts' => [
                 'nachbehandlungen' => count($nachbehandlungen),
                 'hemm_faellig'     => count($hemmFaellig),
                 'hemm_versendet'   => count($hemmVersendet),
                 'traechtig_offen'  => count($traechtigOffen),
+                'letzte_behandlungen'      => count($letzteBehandlungen),
+                'letzte_behandlungen_wz'   => $lbWartezeitAktiv,
             ],
         ];
     }
