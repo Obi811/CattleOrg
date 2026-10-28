@@ -64,6 +64,29 @@ if (!function_exists('formatEarTag')) {
     }
 }
 
+if (!function_exists('cattleLink')) {
+    /**
+     * Baut einen Link auf die Tier-Profilseite (cattle_show.php).
+     * Zentrale Stelle, damit Ohrmarken/Tiernummern ueberall gleich
+     * verlinkt und formatiert werden.
+     *
+     * @param int         $cattleId  ID des Tieres (cattle.id)
+     * @param string|null $earTag    Ohrmarke (wird mit formatEarTag lesbar gemacht)
+     * @param string      $cssClass  optionale CSS-Klassen fuer den <a>-Tag
+     * @param string|null $label     optionaler Anzeigetext (statt formatierter Ohrmarke)
+     */
+    function cattleLink(int $cattleId, ?string $earTag, string $cssClass = '', ?string $label = null): string
+    {
+        $text = $label !== null ? $label : formatEarTag($earTag);
+        if ($text === '') {
+            $text = '–';
+        }
+        $href  = url('cattle_show.php') . '?id=' . $cattleId;
+        $class = $cssClass !== '' ? ' class="' . e($cssClass) . '"' : '';
+        return '<a href="' . e($href) . '"' . $class . '>' . e($text) . '</a>';
+    }
+}
+
 if (!function_exists('normalizeEarTag')) {
     /**
      * Reduziert eine Ohrmarke auf reine Ziffern (entfernt "DE", Leerzeichen etc.).

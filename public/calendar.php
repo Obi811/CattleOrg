@@ -21,23 +21,35 @@ if ($year < 2000 || $year > 2100) { $year = (int) date('Y'); }
 $first = sprintf('%04d-%02d-01', $year, $month);
 $last  = date('Y-m-t', strtotime($first));
 
-// Ereignisse je Tag sammeln
+// Ereignisse je Tag sammeln. Jedes Ereignis speichert die verlinkte Ohrmarke
+// (cattleLink) plus einen kurzen Beschreibungstext, damit vom Kalender aus
+// direkt auf das Tier-Profil gesprungen werden kann.
 $events = [];
-$add = function (string $date, string $label) use (&$events) {
-    $events[$date][] = $label;
+$add = function (string $date, int $cattleId, ?string $earTag, string $text) use (&$events) {
+    $events[$date][] = [
+        'cattle_id' => $cattleId,
+        'ear_tag'   => $earTag,
+        'text'      => $text,
+    ];
 };
 
-$t = $db->prepare('SELECT treatment_date AS d, medication FROM treatments WHERE farm_id=:f AND treatment_date BETWEEN :a AND :b');
+$t = $db->prepare('SELECT t.treatment_date AS d, t.medication, c.id AS cattle_id, c.ear_tag
+                   FROM treatments t JOIN cattle c ON c.id = t.cattle_id AND c.farm_id = t.farm_id
+                   WHERE t.farm_id=:f AND t.treatment_date BETWEEN :a AND :b');
 $t->execute([':f' => $farmId, ':a' => $first, ':b' => $last]);
-foreach ($t->fetchAll() as $r) { $add($r['d'], 'Behandlung: ' . $r['medication']); }
+foreach ($t->fetchAll() as $r) { $add($r['d'], (int) $r['cattle_id'], $r['ear_tag'], 'Behandlung: ' . $r['medication']); }
 
-$i = $db->prepare('SELECT date AS d, bull_name FROM inseminations WHERE farm_id=:f AND date BETWEEN :a AND :b');
+$i = $db->prepare('SELECT i.date AS d, i.bull_name, c.id AS cattle_id, c.ear_tag
+                   FROM inseminations i JOIN cattle c ON c.id = i.cattle_id AND c.farm_id = i.farm_id
+                   WHERE i.farm_id=:f AND i.date BETWEEN :a AND :b');
 $i->execute([':f' => $farmId, ':a' => $first, ':b' => $last]);
-foreach ($i->fetchAll() as $r) { $add($r['d'], 'Besamung'); }
+foreach ($i->fetchAll() as $r) { $add($r['d'], (int) $r['cattle_id'], $r['ear_tag'], 'Besamung'); }
 
-$p = $db->prepare('SELECT check_date AS d, result FROM pregnancy_checks WHERE farm_id=:f AND check_date BETWEEN :a AND :b');
+$p = $db->prepare('SELECT p.check_date AS d, p.result, c.id AS cattle_id, c.ear_tag
+                   FROM pregnancy_checks p JOIN cattle c ON c.id = p.cattle_id AND c.farm_id = p.farm_id
+                   WHERE p.farm_id=:f AND p.check_date BETWEEN :a AND :b');
 $p->execute([':f' => $farmId, ':a' => $first, ':b' => $last]);
-foreach ($p->fetchAll() as $r) { $add($r['d'], 'Traechtigkeit: ' . $r['result']); }
+foreach ($p->fetchAll() as $r) { $add($r['d'], (int) $r['cattle_id'], $r['ear_tag'], 'Traechtigkeit: ' . $r['result']); }
 
 // Kalender-Grid aufbauen
 $daysInMonth = (int) date('t', strtotime($first));
@@ -76,8 +88,10 @@ require_once __DIR__ . '/../templates/header.php';
                 echo '<td style="height:90px;" class="' . ($isToday ? 'table-primary' : '') . '">';
                 echo '<div class="fw-semibold small">' . $d . '</div>';
                 if (!empty($events[$dateStr])) {
-                    foreach (array_slice($events[$dateStr], 0, 3) as $label) {
-                        echo '<div class="badge bg-info text-dark text-truncate d-block mb-1" style="max-width:100%;">' . e($label) . '</div>';
+                    foreach (array_slice($events[$dateStr], 0, 3) as $ev) {
+                        $cowLink = cattleLink($ev['cattle_id'], $ev['ear_tag'], 'text-decoration-none');
+                        echo '<div class="badge bg-info text-dark text-truncate d-block mb-1 text-start" style="max-width:100%;" title="' . e($ev['text']) . '">'
+                            . $cowLink . ' <span class="fw-normal">' . e($ev['text']) . '</span></div>';
                     }
                     if (count($events[$dateStr]) > 3) {
                         echo '<div class="small text-muted">+' . (count($events[$dateStr]) - 3) . ' mehr</div>';

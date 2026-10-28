@@ -52,6 +52,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             redirect(url('cattle_show.php') . '?id=' . $id);
         }
     }
+
+    // --- Bemerkungen: anlegen / loeschen (Berechtigung cattle.write) ---
+    if (hasPermission('cattle.write') && !isDemoBetrieb()) {
+        if (isset($_POST['action']) && $_POST['action'] === 'remark_add') {
+            $rdate = trim($_POST['remark_date'] ?? '') ?: date('Y-m-d');
+            $body  = trim($_POST['remark_body'] ?? '');
+            if ($body !== '') {
+                $ins = $db->prepare(
+                    'INSERT INTO cattle_remarks (farm_id, cattle_id, remark_date, body, created_by)
+                     VALUES (:f, :c, :d, :b, :u)'
+                );
+                $ins->execute([':f' => $farmId, ':c' => $id, ':d' => $rdate, ':b' => $body, ':u' => currentUserId()]);
+                flash('success', 'Bemerkung gespeichert.', 'success');
+            } else {
+                flash('error', 'Bitte einen Text fuer die Bemerkung eingeben.', 'danger');
+            }
+            redirect(url('cattle_show.php') . '?id=' . $id);
+        }
+        if (isset($_POST['action']) && $_POST['action'] === 'remark_delete') {
+            $remarkId = (int) ($_POST['remark_id'] ?? 0);
+            $del = $db->prepare('DELETE FROM cattle_remarks WHERE id = :id AND farm_id = :f AND cattle_id = :c');
+            $del->execute([':id' => $remarkId, ':f' => $farmId, ':c' => $id]);
+            flash('success', 'Bemerkung geloescht.', 'success');
+            redirect(url('cattle_show.php') . '?id=' . $id);
+        }
+    }
 }
 
 // Zugehoerige Daten (alle mit farm_id gefiltert)
@@ -115,6 +141,33 @@ $st = $db->prepare('SELECT * FROM stall_history WHERE cattle_id = :id AND farm_i
 $st->execute([':id' => $id, ':f' => $farmId]);
 $stallHistory = $st->fetchAll();
 
+// --- Kalbungen / Nachkommen ---
+// Kalbungen sind in diesem System keine eigene Tabelle, sondern ergeben sich aus
+// den Tieren, deren Mutter dieses Tier ist. Verknuepfung ueber mutter_id (FK auf
+// cattle.id) ODER ueber die Ohrmarke (Feld mutter = ear_tag dieses Tieres).
+// Deshalb wurden Kalbungen bisher auf der Profilseite nicht angezeigt – es fehlte
+// schlicht diese Abfrage/Sektion. Beides betriebsbezogen.
+$off = $db->prepare(
+    'SELECT id, ear_tag, birth_date, geschlecht, rasse, mehrling
+     FROM cattle
+     WHERE farm_id = :f AND id <> :id2
+       AND (mutter_id = :id OR (mutter IS NOT NULL AND mutter <> "" AND mutter = :eartag))
+     ORDER BY birth_date DESC, id DESC'
+);
+$off->execute([':f' => $farmId, ':id' => $id, ':id2' => $id, ':eartag' => $cattle['ear_tag']]);
+$offspring = $off->fetchAll();
+
+// --- Bemerkungen (neueste zuerst) ---
+$rm = $db->prepare(
+    'SELECT r.id, r.remark_date, r.body, r.created_at, u.username AS author
+     FROM cattle_remarks r
+     LEFT JOIN users u ON u.id = r.created_by
+     WHERE r.cattle_id = :id AND r.farm_id = :f
+     ORDER BY r.remark_date DESC, r.id DESC'
+);
+$rm->execute([':id' => $id, ':f' => $farmId]);
+$remarks = $rm->fetchAll();
+
 $pageTitle = 'Tier ' . formatEarTag($cattle['ear_tag']);
 require_once __DIR__ . '/../templates/header.php';
 ?>
@@ -156,7 +209,13 @@ require_once __DIR__ . '/../templates/header.php';
                 <dt class="col-5">Alter</dt><dd class="col-7"><?= e(calcAge($cattle['birth_date'])) ?></dd>
                 <dt class="col-5">Rasse</dt><dd class="col-7"><?= e($cattle['rasse'] ?: '-') ?></dd>
                 <dt class="col-5">Geschlecht</dt><dd class="col-7"><?= e($cattle['geschlecht'] ?: '-') ?></dd>
-                <dt class="col-5">Mutter</dt><dd class="col-7"><?= e(formatEarTag($cattle['mutter']) ?: '-') ?></dd>
+                <dt class="col-5">Mutter</dt><dd class="col-7"><?php
+                    if (!empty($cattle['mutter_id'])) {
+                        echo cattleLink((int) $cattle['mutter_id'], $cattle['mutter']);
+                    } else {
+                        echo e(formatEarTag($cattle['mutter']) ?: '-');
+                    }
+                ?></dd>
                 <dt class="col-5">Mehrling</dt><dd class="col-7"><?= e($cattle['mehrling']) ?></dd>
                 <dt class="col-5">Zugang</dt><dd class="col-7"><?= e($cattle['zugang'] ?: '-') ?></dd>
                 <dt class="col-5">Abgang</dt><dd class="col-7"><?= e($cattle['abgang'] ?: '-') ?></dd>
@@ -225,6 +284,24 @@ require_once __DIR__ . '/../templates/header.php';
         </div></div>
 
         <div class="card mb-3"><div class="card-body">
+            <h2 class="h6">Kalbungen / Nachkommen (<?= count($offspring) ?>)</h2>
+            <?php if (empty($offspring)): ?><p class="text-muted small mb-0">Keine Kalbungen / Nachkommen erfasst.</p><?php else: ?>
+                <div class="table-responsive"><table class="table table-sm mb-0">
+                    <thead><tr><th>Geburtsdatum</th><th>Kalb (Ohrmarke)</th><th>Geschlecht</th><th>Rasse</th><th>Mehrling</th></tr></thead>
+                    <tbody><?php foreach ($offspring as $kalb): ?>
+                        <tr>
+                            <td><?= e($kalb['birth_date'] ?: '-') ?></td>
+                            <td><?= cattleLink((int) $kalb['id'], $kalb['ear_tag']) ?></td>
+                            <td><?= e($kalb['geschlecht'] ?: '-') ?></td>
+                            <td><?= e($kalb['rasse'] ?: '-') ?></td>
+                            <td><?= e($kalb['mehrling']) ?></td>
+                        </tr>
+                    <?php endforeach; ?></tbody>
+                </table></div>
+            <?php endif; ?>
+        </div></div>
+
+        <div class="card mb-3"><div class="card-body">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <h2 class="h6 mb-0">Hemmstoffproben (<?= count($hemmstoffProbes) ?>)</h2>
             </div>
@@ -269,7 +346,7 @@ require_once __DIR__ . '/../templates/header.php';
             <?php endif; ?>
         </div></div>
 
-        <div class="card"><div class="card-body">
+        <div class="card mb-3"><div class="card-body">
             <h2 class="h6">Stallhistorie (<?= count($stallHistory) ?>)</h2>
             <?php if (empty($stallHistory)): ?><p class="text-muted small mb-0">Keine Eintraege.</p><?php else: ?>
                 <div class="table-responsive"><table class="table table-sm mb-0">
@@ -278,6 +355,58 @@ require_once __DIR__ . '/../templates/header.php';
                         <tr><td><?= e($s['stall_name']) ?></td><td><?= e($s['start_date']) ?></td><td><?= e($s['end_date'] ?: 'aktuell') ?></td></tr>
                     <?php endforeach; ?></tbody>
                 </table></div>
+            <?php endif; ?>
+        </div></div>
+
+        <!-- ================= Bemerkungen ================= -->
+        <div class="card"><div class="card-body">
+            <h2 class="h6">Bemerkungen (<?= count($remarks) ?>)</h2>
+            <?php if (hasPermission('cattle.write') && !isDemoBetrieb()): ?>
+                <form method="post" class="row g-2 align-items-end mb-3">
+                    <?= csrfField() ?>
+                    <input type="hidden" name="action" value="remark_add">
+                    <div class="col-12 col-sm-3">
+                        <label class="form-label mb-0 small">Datum</label>
+                        <input type="date" name="remark_date" value="<?= e(date('Y-m-d')) ?>" class="form-control form-control-sm">
+                    </div>
+                    <div class="col-12 col-sm-7">
+                        <label class="form-label mb-0 small">Bemerkung</label>
+                        <input type="text" name="remark_body" class="form-control form-control-sm" maxlength="2000" placeholder="z. B. Beobachtung, Auffaelligkeit ..." required>
+                    </div>
+                    <div class="col-12 col-sm-2">
+                        <button class="btn btn-outline-primary btn-sm w-100"><i class="bi bi-plus-lg"></i> Hinzufuegen</button>
+                    </div>
+                </form>
+            <?php endif; ?>
+            <?php if (empty($remarks)): ?>
+                <p class="text-muted small mb-0">Keine Bemerkungen.</p>
+            <?php else: ?>
+                <ul class="list-group list-group-flush">
+                    <?php foreach ($remarks as $r): ?>
+                        <li class="list-group-item px-0">
+                            <div class="d-flex justify-content-between align-items-start gap-2">
+                                <div>
+                                    <div><?= nl2br(e($r['body'])) ?></div>
+                                    <div class="small text-muted">
+                                        <?= e(date('d.m.Y', strtotime($r['remark_date']))) ?>
+                                        <?= $r['author'] ? ' &middot; ' . e($r['author']) : '' ?>
+                                    </div>
+                                </div>
+                                <?php if (hasPermission('cattle.write') && !isDemoBetrieb()): ?>
+                                    <form method="post" class="d-inline">
+                                        <?= csrfField() ?>
+                                        <input type="hidden" name="action" value="remark_delete">
+                                        <input type="hidden" name="remark_id" value="<?= (int) $r['id'] ?>">
+                                        <button class="btn btn-outline-danger btn-sm" title="Bemerkung loeschen"
+                                            onclick="return confirm('Diese Bemerkung wirklich loeschen?');">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                <?php endif; ?>
+                            </div>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
             <?php endif; ?>
         </div></div>
     </div>
