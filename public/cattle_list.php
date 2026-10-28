@@ -47,8 +47,10 @@ if ($geschlecht === 'W' || $geschlecht === 'M') {
     $params[':geschlecht'] = $geschlecht;
 }
 if ($q !== '') {
-    $where[] = '(c.ear_tag LIKE :q OR c.mutter LIKE :q)';
-    $params[':q'] = '%' . $q . '%';
+    // Jeder Platzhalter darf nur einmal vorkommen (native Prepared Statements).
+    $where[] = '(c.ear_tag LIKE :q1 OR c.mutter LIKE :q2)';
+    $params[':q1'] = '%' . $q . '%';
+    $params[':q2'] = '%' . $q . '%';
 }
 // Alter in Monaten -> über Geburtsdatum
 if ($minAge !== '' && ctype_digit($minAge)) {
