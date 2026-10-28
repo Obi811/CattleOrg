@@ -3,7 +3,7 @@
  * public/cattle_timeline.php
  * -----------------------------------------------------------------------------
  * Chronologischer Gesamtverlauf eines Tieres (Behandlungen, Besamungen,
- * Traechtigkeitskontrollen, Stallwechsel) in einer Zeitleiste. Betriebsbezogen.
+ * Trächtigkeitskontrollen, Stallwechsel) in einer Zeitleiste. Betriebsbezogen.
  */
 
 require_once __DIR__ . '/../includes/bootstrap.php';
@@ -44,7 +44,7 @@ $pr = $db->prepare('SELECT check_date AS d, result, comment FROM pregnancy_check
 $pr->execute([':id' => $id, ':f' => $farmId]);
 foreach ($pr->fetchAll() as $r) {
     $events[] = ['date' => $r['d'], 'icon' => 'clipboard-check', 'color' => 'info',
-        'title' => 'Traechtigkeitskontrolle', 'text' => 'Ergebnis: ' . $r['result'] . ($r['comment'] ? ' – ' . $r['comment'] : '')];
+        'title' => 'Trächtigkeitskontrolle', 'text' => 'Ergebnis: ' . $r['result'] . ($r['comment'] ? ' – ' . $r['comment'] : '')];
 }
 
 $sh = $db->prepare('SELECT start_date AS d, stall_name FROM stall_history WHERE cattle_id=:id AND farm_id=:f');
@@ -78,5 +78,5 @@ require_once __DIR__ . '/../templates/header.php';
         </ul>
     <?php endif; ?>
 </div></div>
-<a href="<?= e(url('cattle_show.php')) ?>?id=<?= $id ?>" class="btn btn-link mt-2">&laquo; Zurueck zum Tier</a>
+<a href="<?= e(url('cattle_show.php')) ?>?id=<?= $id ?>" class="btn btn-link mt-2">&laquo; Zurück zum Tier</a>
 <?php require_once __DIR__ . '/../templates/footer.php'; ?>

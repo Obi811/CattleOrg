@@ -8,7 +8,7 @@
  * Funktionen:
  *   - Mitarbeiter des Betriebs auflisten (mit Rolle)
  *   - neuen Benutzer anlegen ODER bestehenden per Benutzername zuordnen
- *   - Rolle aendern, Zuordnung entfernen
+ *   - Rolle ändern, Zuordnung entfernen
  */
 
 require_once __DIR__ . '/../../includes/bootstrap.php';
@@ -49,7 +49,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!$user) {
                 // Neuen User anlegen (Passwort erforderlich)
                 if (strlen($password) < 8) {
-                    $errors[] = 'Fuer einen neuen Benutzer ist ein Passwort mit mind. 8 Zeichen noetig.';
+                    $errors[] = 'Für einen neuen Benutzer ist ein Passwort mit mind. 8 Zeichen nötig.';
                 } else {
                     $ins = $db->prepare('INSERT INTO users (username, password_hash, is_admin) VALUES (:u, :p, 0)');
                     $ins->execute([':u' => $username, ':p' => password_hash($password, PASSWORD_DEFAULT)]);
@@ -92,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $row = $chk->fetch();
         if ($row && (int) $row['user_id'] === currentUserId()) {
             // Sich selbst nicht entfernen
-            flash('error', 'Sie koennen Ihre eigene Zuordnung nicht entfernen.', 'danger');
+            flash('error', 'Sie können Ihre eigene Zuordnung nicht entfernen.', 'danger');
         } elseif ($row && $row['role'] === 'owner' && countFarmOwners($db, $farmId) <= 1) {
             // Letzten Owner nicht entfernen
             flash('error', 'Der letzte Owner des Betriebs kann nicht entfernt werden.', 'danger');
@@ -123,19 +123,19 @@ require_once __DIR__ . '/../../templates/header.php';
 <div class="row g-3">
     <div class="col-lg-4">
         <div class="card card-body">
-            <h2 class="h6">Benutzer hinzufuegen</h2>
+            <h2 class="h6">Benutzer hinzufügen</h2>
             <p class="text-muted small">Bestehenden Benutzer per Benutzername oder E-Mail zuordnen oder neuen anlegen (dann Passwort angeben).</p>
             <form method="post">
                 <?= csrfField() ?>
                 <input type="hidden" name="action" value="add">
                 <div class="mb-2"><label class="form-label mb-0">Benutzername oder E-Mail *</label><input name="username" class="form-control form-control-sm" required></div>
-                <div class="mb-2"><label class="form-label mb-0">Passwort (nur fuer neue)</label><input type="password" name="password" class="form-control form-control-sm"></div>
+                <div class="mb-2"><label class="form-label mb-0">Passwort (nur für neue)</label><input type="password" name="password" class="form-control form-control-sm"></div>
                 <div class="mb-2"><label class="form-label mb-0">Rolle</label>
                     <select name="role" class="form-select form-select-sm">
                         <?php foreach ($roles as $r): ?><option value="<?= e($r) ?>" <?= $r === 'worker' ? 'selected' : '' ?>><?= e($r) ?></option><?php endforeach; ?>
                     </select>
                 </div>
-                <button class="btn btn-success btn-sm w-100"><i class="bi bi-person-plus"></i> Hinzufuegen</button>
+                <button class="btn btn-success btn-sm w-100"><i class="bi bi-person-plus"></i> Hinzufügen</button>
             </form>
             <hr>
             <div class="small text-muted">

@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ':m' => $wzMilk !== '' ? $wzMilk : null,
             ':f' => $wzFleisch !== '' ? $wzFleisch : null,
         ]);
-        flash('success', 'Medikament wurde hinzugefuegt.', 'success');
+        flash('success', 'Medikament wurde hinzugefügt.', 'success');
         redirect(url('add_medications.php'));
     }
 }
@@ -57,7 +57,7 @@ require_once __DIR__ . '/../templates/header.php';
 ?>
 <h1 class="h3 mb-3">Medikamentenkatalog <span class="badge bg-secondary">global</span></h1>
 <div class="alert alert-info small">
-    <i class="bi bi-info-circle"></i> Der Medikamentenkatalog ist betriebsuebergreifend (global) und steht allen Betrieben zur Verfuegung.
+    <i class="bi bi-info-circle"></i> Der Medikamentenkatalog ist betriebsübergreifend (global) und steht allen Betrieben zur Verfügung.
 </div>
 <div class="row g-3">
     <div class="col-lg-4">
@@ -71,7 +71,7 @@ require_once __DIR__ . '/../templates/header.php';
                 <div class="mb-2"><label class="form-label mb-0">Dosierung</label><input name="dosage" class="form-control form-control-sm"></div>
                 <div class="mb-2"><label class="form-label mb-0">Wartezeit Milch (Tage)</label><input name="wz_milk" class="form-control form-control-sm"></div>
                 <div class="mb-2"><label class="form-label mb-0">Wartezeit Fleisch (Tage)</label><input name="wz_fleisch" class="form-control form-control-sm"></div>
-                <button class="btn btn-success btn-sm w-100"><i class="bi bi-plus-lg"></i> Hinzufuegen</button>
+                <button class="btn btn-success btn-sm w-100"><i class="bi bi-plus-lg"></i> Hinzufügen</button>
             </form>
         </div>
     </div>

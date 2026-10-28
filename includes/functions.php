@@ -2,7 +2,7 @@
 /**
  * functions.php
  * -----------------------------------------------------------------------------
- * Allgemeine Hilfsfunktionen ohne Abhaengigkeit von Session/Mandant.
+ * Allgemeine Hilfsfunktionen ohne Abhängigkeit von Session/Mandant.
  */
 
 declare(strict_types=1);
@@ -41,7 +41,7 @@ if (!function_exists('url')) {
 
 if (!function_exists('formatEarTag')) {
     /**
-     * Formatiert eine Ohrmarkennummer in lesbare Bloecke (z. B. "12 345 67890").
+     * Formatiert eine Ohrmarkennummer in lesbare Blöcke (z. B. "12 345 67890").
      */
     function formatEarTag(?string $earTag): string
     {
@@ -67,12 +67,12 @@ if (!function_exists('formatEarTag')) {
 if (!function_exists('cattleLink')) {
     /**
      * Baut einen Link auf die Tier-Profilseite (cattle_show.php).
-     * Zentrale Stelle, damit Ohrmarken/Tiernummern ueberall gleich
+     * Zentrale Stelle, damit Ohrmarken/Tiernummern überall gleich
      * verlinkt und formatiert werden.
      *
      * @param int         $cattleId  ID des Tieres (cattle.id)
      * @param string|null $earTag    Ohrmarke (wird mit formatEarTag lesbar gemacht)
-     * @param string      $cssClass  optionale CSS-Klassen fuer den <a>-Tag
+     * @param string      $cssClass  optionale CSS-Klassen für den <a>-Tag
      * @param string|null $label     optionaler Anzeigetext (statt formatierter Ohrmarke)
      */
     function cattleLink(int $cattleId, ?string $earTag, string $cssClass = '', ?string $label = null): string
@@ -149,8 +149,8 @@ if (!function_exists('calcAge')) {
 
 if (!function_exists('flash')) {
     /**
-     * Einfache Flash-Messages ueber die Session.
-     * Aufruf ohne $message liest und loescht die gespeicherte Nachricht.
+     * Einfache Flash-Messages über die Session.
+     * Aufruf ohne $message liest und löscht die gespeicherte Nachricht.
      */
     function flash(string $key, ?string $message = null, string $type = 'info')
     {

@@ -2,7 +2,7 @@
 /**
  * device_tokens.php
  * -----------------------------------------------------------------------------
- * Gemeinsame Logik fuer die Verwaltung der Push-Geraete-Tokens (APNs/iOS).
+ * Gemeinsame Logik für die Verwaltung der Push-Geräte-Tokens (APNs/iOS).
  *
  * Diese Datei ist die EINZIGE Implementierung des Upserts/Abmeldens. Sowohl der
  * bestehende Endpunkt /api/v1/devices als auch der Alias /api/v1/device-tokens
@@ -15,8 +15,8 @@ declare(strict_types=1);
 
 if (!function_exists('deviceOptionalFarmId')) {
     /**
-     * Ermittelt einen optionalen, gueltigen Betriebs-Kontext fuer ein Geraet.
-     * Gibt die farm_id zurueck oder null (kein/ungueltiger Kontext).
+     * Ermittelt einen optionalen, gültigen Betriebs-Kontext für ein Gerät.
+     * Gibt die farm_id zurück oder null (kein/ungültiger Kontext).
      */
     function deviceOptionalFarmId(PDO $db, array $apiUser): ?int
     {
@@ -41,13 +41,13 @@ if (!function_exists('deviceOptionalFarmId')) {
 
 if (!function_exists('deviceTokenUpsert')) {
     /**
-     * Registriert oder aktualisiert (Upsert ueber UNIQUE(token)) ein Geraet.
+     * Registriert oder aktualisiert (Upsert über UNIQUE(token)) ein Gerät.
      * Schreibt alle Spalten inkl. der 010er-Zusatzfelder (api_token_id,
      * device_name, app_version, last_seen_at).
      *
      * @param array $input  Request-Body (token Pflicht; optional platform,
      *                       environment, device_name, app_version, prefs{})
-     * @return array        Normalisierter Geraete-Datensatz fuer die Antwort.
+     * @return array        Normalisierter Geräte-Datensatz für die Antwort.
      */
     function deviceTokenUpsert(PDO $db, array $apiUser, array $input): array
     {
@@ -71,7 +71,7 @@ if (!function_exists('deviceTokenUpsert')) {
         $appVersion = trim((string) ($input['app_version'] ?? '')) ?: null;
         $farmId     = deviceOptionalFarmId($db, $apiUser);
 
-        // Mitteilungs-Praeferenzen (optional, Standard: alle an)
+        // Mitteilungs-Präferenzen (optional, Standard: alle an)
         $prefs = is_array($input['prefs'] ?? null) ? $input['prefs'] : [];
         $pWeiter  = isset($prefs['weiterbehandlung']) ? (int) filter_var($prefs['weiterbehandlung'], FILTER_VALIDATE_BOOL) : 1;
         $pWarte   = isset($prefs['wartezeit'])        ? (int) filter_var($prefs['wartezeit'], FILTER_VALIDATE_BOOL)        : 1;
@@ -135,8 +135,8 @@ if (!function_exists('deviceTokenUpsert')) {
 
 if (!function_exists('deviceTokenDeactivate')) {
     /**
-     * Meldet ein Geraet ab (is_active = 0). Nur eigene Geraete (IDOR-Schutz
-     * ueber user_id). Gibt true zurueck, wenn ein Datensatz betroffen war.
+     * Meldet ein Gerät ab (is_active = 0). Nur eigene Geräte (IDOR-Schutz
+     * über user_id). Gibt true zurück, wenn ein Datensatz betroffen war.
      */
     function deviceTokenDeactivate(PDO $db, int $userId, string $token): bool
     {

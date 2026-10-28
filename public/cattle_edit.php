@@ -45,10 +45,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Bitte eine Ohrmarkennummer eingeben.';
     }
     if ($rasse !== '' && !in_array($rasse, cattleRaces(), true)) {
-        $errors[] = 'Ungueltige Rasse.';
+        $errors[] = 'Ungültige Rasse.';
     }
 
-    // Eindeutigkeit (ausser dem aktuellen Datensatz)
+    // Eindeutigkeit (außer dem aktuellen Datensatz)
     if ($earTag !== '') {
         $chk = $db->prepare('SELECT COUNT(*) FROM cattle WHERE farm_id = :f AND ear_tag = :e AND id <> :id');
         $chk->execute([':f' => $farmId, ':e' => $earTag, ':id' => $id]);
@@ -76,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ':verendung' => $verendung !== '' ? $verendung : null,
             ':id' => $id, ':f' => $farmId,
         ]);
-        flash('success', 'Aenderungen gespeichert.', 'success');
+        flash('success', 'Änderungen gespeichert.', 'success');
         redirect(url('cattle_show.php') . '?id=' . $id);
     }
     // Bei Fehler: eingegebene Werte beibehalten
@@ -110,7 +110,7 @@ require_once __DIR__ . '/../templates/header.php';
                 <div class="col-md-6">
                     <label class="form-label">Rasse</label>
                     <select name="rasse" class="form-select">
-                        <option value="">-- waehlen --</option>
+                        <option value="">-- wählen --</option>
                         <?php foreach (cattleRaces() as $r): ?>
                             <option value="<?= e($r) ?>" <?= $cattle['rasse'] === $r ? 'selected' : '' ?>><?= e($r) ?></option>
                         <?php endforeach; ?>
@@ -121,7 +121,7 @@ require_once __DIR__ . '/../templates/header.php';
                     <select name="geschlecht" class="form-select">
                         <option value="">--</option>
                         <option value="W" <?= $cattle['geschlecht'] === 'W' ? 'selected' : '' ?>>Weiblich</option>
-                        <option value="M" <?= $cattle['geschlecht'] === 'M' ? 'selected' : '' ?>>Maennlich</option>
+                        <option value="M" <?= $cattle['geschlecht'] === 'M' ? 'selected' : '' ?>>Männlich</option>
                     </select>
                 </div>
                 <div class="col-md-3">

@@ -3,7 +3,7 @@
  * exports/export_calendar_pdf.php
  * -----------------------------------------------------------------------------
  * PDF-Export der Monatsereignisse (Behandlungen, Besamungen,
- * Traechtigkeitskontrollen) eines Betriebs. Strikt betriebsbezogen.
+ * Trächtigkeitskontrollen) eines Betriebs. Strikt betriebsbezogen.
  */
 
 require_once __DIR__ . '/../../includes/bootstrap.php';
@@ -26,7 +26,7 @@ $events = array_merge($events, $t->fetchAll());
 $i = $db->prepare("SELECT date d, 'Besamung' typ, COALESCE(bull_name,'') info, cattle_id FROM inseminations WHERE farm_id=:f AND date BETWEEN :a AND :b");
 $i->execute([':f' => $farmId, ':a' => $first, ':b' => $last]);
 $events = array_merge($events, $i->fetchAll());
-$p = $db->prepare("SELECT check_date d, 'Traechtigkeit' typ, result info, cattle_id FROM pregnancy_checks WHERE farm_id=:f AND check_date BETWEEN :a AND :b");
+$p = $db->prepare("SELECT check_date d, 'Trächtigkeit' typ, result info, cattle_id FROM pregnancy_checks WHERE farm_id=:f AND check_date BETWEEN :a AND :b");
 $p->execute([':f' => $farmId, ':a' => $first, ':b' => $last]);
 $events = array_merge($events, $p->fetchAll());
 
@@ -42,7 +42,7 @@ if ($events) {
 
 usort($events, fn($a, $b) => strcmp((string) $a['d'], (string) $b['d']));
 
-$monthNames = [1=>'Januar','Februar','Maerz','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+$monthNames = [1=>'Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
 $farmName = $_SESSION['current_farm_name'] ?? 'Betrieb';
 
 ob_start();

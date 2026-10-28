@@ -2,7 +2,7 @@
 /**
  * templates/footer.php
  * -----------------------------------------------------------------------------
- * Gemeinsamer Seitenfuss inkl. Bootstrap-JS.
+ * Gemeinsamer Seitenfuß inkl. Bootstrap-JS.
  */
 ?>
 </main>

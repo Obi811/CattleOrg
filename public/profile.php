@@ -2,8 +2,8 @@
 /**
  * public/profile.php
  * -----------------------------------------------------------------------------
- * Benutzerprofil: eigenes Passwort aendern und Konto-Informationen anzeigen.
- * Jeder eingeloggte Nutzer darf sein Passwort selbst aendern.
+ * Benutzerprofil: eigenes Passwort ändern und Konto-Informationen anzeigen.
+ * Jeder eingeloggte Nutzer darf sein Passwort selbst ändern.
  */
 
 require_once __DIR__ . '/../includes/bootstrap.php';
@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $currentPassword = $_POST['current_password'] ?? '';
         $newEmail = trim($_POST['new_email'] ?? '');
 
-        // Zur Sicherheit aktuelles Passwort bestaetigen
+        // Zur Sicherheit aktuelles Passwort bestätigen
         if (!password_verify($currentPassword, $user['password_hash'])) {
             $errors[] = 'Das aktuelle Passwort ist nicht korrekt.';
         }
@@ -62,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = 'Bitte eine gültige E-Mail-Adresse eingeben.';
         }
         if (empty($errors) && $newEmail !== '') {
-            // Eindeutigkeit der E-Mail prüfen (ausser eigenem Konto)
+            // Eindeutigkeit der E-Mail prüfen (außer eigenem Konto)
             $chk = $db->prepare('SELECT COUNT(*) FROM users WHERE email = :e AND id <> :id');
             $chk->execute([':e' => $newEmail, ':id' => $userId]);
             if ((int) $chk->fetchColumn() > 0) {

@@ -3,7 +3,7 @@
  * admin/user_list.php
  * -----------------------------------------------------------------------------
  * System-Admin: alle Benutzer der Plattform auflisten, neue System-Benutzer
- * anlegen, Passwort zuruecksetzen und Admin-Flag setzen.
+ * anlegen, Passwort zurücksetzen und Admin-Flag setzen.
  */
 
 require_once __DIR__ . '/../../includes/bootstrap.php';
@@ -47,17 +47,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $upd = $db->prepare('UPDATE users SET password_hash = :p WHERE id = :id');
             $upd->execute([':p' => password_hash($password, PASSWORD_DEFAULT), ':id' => $id]);
-            flash('success', 'Passwort zurueckgesetzt.', 'success');
+            flash('success', 'Passwort zurückgesetzt.', 'success');
             redirect(url('admin/user_list.php'));
         }
     } elseif ($action === 'toggle_admin') {
         $id = (int) ($_POST['user_id'] ?? 0);
         if ($id === currentUserId()) {
-            flash('error', 'Eigene Admin-Rechte koennen nicht entzogen werden.', 'danger');
+            flash('error', 'Eigene Admin-Rechte können nicht entzogen werden.', 'danger');
         } else {
             $upd = $db->prepare('UPDATE users SET is_admin = 1 - is_admin WHERE id = :id');
             $upd->execute([':id' => $id]);
-            flash('success', 'Admin-Status geaendert.', 'success');
+            flash('success', 'Admin-Status geändert.', 'success');
         }
         redirect(url('admin/user_list.php'));
     }
@@ -109,7 +109,7 @@ require_once __DIR__ . '/../../templates/header.php';
                             </td>
                             <td><small><?= e($u['last_login'] ?: '-') ?></small></td>
                             <td>
-                                <form method="post" class="d-flex gap-1" onsubmit="return confirm('Passwort zuruecksetzen?');">
+                                <form method="post" class="d-flex gap-1" onsubmit="return confirm('Passwort zurücksetzen?');">
                                     <?= csrfField() ?>
                                     <input type="hidden" name="action" value="reset_pw">
                                     <input type="hidden" name="user_id" value="<?= (int) $u['id'] ?>">

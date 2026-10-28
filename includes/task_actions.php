@@ -5,10 +5,10 @@
  * Gemeinsame POST-Verarbeitung der Aufgaben-Schnellaktionen. Wird von
  * index.php (Dashboard) und todo_list.php eingebunden, damit die
  * Inline-Erfassung (Hemmstoff-Ergebnis, Probe weggeschickt,
- * Traechtigkeitsergebnis, Nachbehandlung) an beiden Stellen identisch
+ * Trächtigkeitsergebnis, Nachbehandlung) an beiden Stellen identisch
  * funktioniert.
  *
- * Alle Schreibzugriffe sind betriebsbezogen (farm_id), CSRF-geschuetzt,
+ * Alle Schreibzugriffe sind betriebsbezogen (farm_id), CSRF-geschützt,
  * im Demo-Betrieb gesperrt und verwenden Prepared Statements.
  */
 
@@ -17,7 +17,7 @@ declare(strict_types=1);
 if (!function_exists('handleTaskPost')) {
     /**
      * Verarbeitet eine Aufgaben-Schnellaktion aus $_POST und leitet danach
-     * auf $redirectTo zurueck. Gibt true zurueck, wenn eine Aktion erkannt
+     * auf $redirectTo zurück. Gibt true zurück, wenn eine Aktion erkannt
      * und (nach Berechtigung) verarbeitet wurde.
      */
     function handleTaskPost(PDO $db, int $farmId, string $redirectTo): bool
@@ -38,7 +38,7 @@ if (!function_exists('handleTaskPost')) {
         $userId   = currentUserId();
 
         switch ($action) {
-            // --- Nachbehandlung: gestrige Behandlung heute uebernehmen (bestehende Logik) ---
+            // --- Nachbehandlung: gestrige Behandlung heute übernehmen (bestehende Logik) ---
             case 'weiterbehandeln':
                 if ($canTreat) {
                     $treatmentId = (int) ($_POST['treatment_id'] ?? 0);
@@ -55,16 +55,16 @@ if (!function_exists('handleTaskPost')) {
                             ':m' => $orig['medication'], ':dos' => $orig['dosage'],
                             ':t' => $orig['type'], ':n' => $orig['notes'],
                         ]);
-                        flash('success', 'Behandlung wurde fuer heute uebernommen.', 'success');
+                        flash('success', 'Behandlung wurde für heute übernommen.', 'success');
                     }
                 }
                 break;
 
-            // --- Nachbehandlung "Nicht noetig": Vorschlag fuer heute ausblenden ---
+            // --- Nachbehandlung "Nicht nötig": Vorschlag für heute ausblenden ---
             case 'followup_dismiss':
                 if ($canTreat) {
                     $treatmentId = (int) ($_POST['treatment_id'] ?? 0);
-                    // Behandlung betriebsbezogen pruefen (cattle_id ermitteln)
+                    // Behandlung betriebsbezogen prüfen (cattle_id ermitteln)
                     $s = $db->prepare('SELECT id, cattle_id FROM treatments WHERE id = :id AND farm_id = :f');
                     $s->execute([':id' => $treatmentId, ':f' => $farmId]);
                     $orig = $s->fetch();
@@ -75,7 +75,7 @@ if (!function_exists('handleTaskPost')) {
                              ON DUPLICATE KEY UPDATE dismissed_by = VALUES(dismissed_by)'
                         );
                         $ins->execute([':f' => $farmId, ':c' => $orig['cattle_id'], ':t' => $treatmentId, ':u' => $userId]);
-                        flash('success', 'Nachbehandlung als "nicht noetig" markiert.', 'success');
+                        flash('success', 'Nachbehandlung als "nicht nötig" markiert.', 'success');
                     }
                 }
                 break;
@@ -103,7 +103,7 @@ if (!function_exists('handleTaskPost')) {
                     $cattleId = (int) ($_POST['cattle_id'] ?? 0);
                     $nummer   = trim((string) ($_POST['nummer'] ?? ''));
                     $sentDate = trim((string) ($_POST['sent_date'] ?? '')) ?: date('Y-m-d');
-                    // Tier betriebsbezogen pruefen
+                    // Tier betriebsbezogen prüfen
                     $cs = $db->prepare('SELECT id FROM cattle WHERE id = :id AND farm_id = :f');
                     $cs->execute([':id' => $cattleId, ':f' => $farmId]);
                     if ($cs->fetch() && $nummer !== '') {
@@ -122,7 +122,7 @@ if (!function_exists('handleTaskPost')) {
                 }
                 break;
 
-            // --- Traechtigkeitskontrolle: Ergebnis traechtig / nicht traechtig vor Ort erfassen ---
+            // --- Trächtigkeitskontrolle: Ergebnis trächtig / nicht trächtig vor Ort erfassen ---
             case 'preg_result':
                 if ($canPreg) {
                     $cattleId = (int) ($_POST['cattle_id'] ?? 0);
@@ -136,8 +136,8 @@ if (!function_exists('handleTaskPost')) {
                                  VALUES (:f, :c, CURDATE(), :r)'
                             );
                             $ins->execute([':f' => $farmId, ':c' => $cattleId, ':r' => $result]);
-                            $text = $result === '+' ? 'traechtig' : 'nicht traechtig';
-                            flash('success', 'Traechtigkeitskontrolle gespeichert: ' . $text . '.', 'success');
+                            $text = $result === '+' ? 'trächtig' : 'nicht trächtig';
+                            flash('success', 'Trächtigkeitskontrolle gespeichert: ' . $text . '.', 'success');
                         }
                     }
                 }

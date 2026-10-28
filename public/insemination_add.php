@@ -2,7 +2,7 @@
 /**
  * public/insemination_add.php
  * -----------------------------------------------------------------------------
- * Besamung / Belegung erfassen. Betriebsbezogen, CSRF-geschuetzt.
+ * Besamung / Belegung erfassen. Betriebsbezogen, CSRF-geschützt.
  */
 
 require_once __DIR__ . '/../includes/bootstrap.php';
@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Bitte ein Datum eingeben.';
     }
     if (!in_array($type, ['besamt', 'gestiert'], true)) {
-        $errors[] = 'Bitte eine gueltige Art waehlen.';
+        $errors[] = 'Bitte eine gültige Art wählen.';
     }
 
     if (empty($errors)) {
@@ -73,7 +73,7 @@ require_once __DIR__ . '/../templates/header.php';
         <div class="mb-3">
             <label class="form-label">Art *</label>
             <select name="type" class="form-select" required>
-                <option value="besamt">besamt (kuenstlich)</option>
+                <option value="besamt">besamt (künstlich)</option>
                 <option value="gestiert">gestiert (Natursprung)</option>
             </select>
         </div>

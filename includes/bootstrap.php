@@ -2,7 +2,7 @@
 /**
  * bootstrap.php
  * -----------------------------------------------------------------------------
- * Zentrales Include fuer ALLE Web-Seiten. Bindet Konfiguration, Helper, Auth
+ * Zentrales Include für ALLE Web-Seiten. Bindet Konfiguration, Helper, Auth
  * und Mandantenlogik in der richtigen Reihenfolge ein. Eliminiert das
  * Boilerplate (session_start, ini_set, require...) aus jeder einzelnen Datei.
  *
@@ -13,7 +13,7 @@
 
 declare(strict_types=1);
 
-// Composer-Autoloader (falls vorhanden – fuer dompdf / PhpSpreadsheet)
+// Composer-Autoloader (falls vorhanden – für dompdf / PhpSpreadsheet)
 $autoload = dirname(__DIR__) . '/vendor/autoload.php';
 if (is_readable($autoload)) {
     require_once $autoload;
@@ -21,7 +21,7 @@ if (is_readable($autoload)) {
 
 require_once __DIR__ . '/config.php';     // .env laden, PDO ($db) aufbauen, Fehlerhandling
 require_once __DIR__ . '/functions.php';  // Allgemeine Helper
-require_once __DIR__ . '/auth.php';       // Session-Haertung, Login, CSRF
+require_once __DIR__ . '/auth.php';       // Session-Härtung, Login, CSRF
 require_once __DIR__ . '/tenant.php';     // Mandanten- & Berechtigungslogik
 
-// $db ist ab hier global verfuegbar.
+// $db ist ab hier global verfügbar.

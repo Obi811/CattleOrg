@@ -3,7 +3,7 @@
  * public/change_stall.php
  * -----------------------------------------------------------------------------
  * Stallwechsel erfassen. Die Stallliste kommt aus der DB (pro Betrieb),
- * nicht mehr aus einer hardcodierten Liste. Schliesst den offenen
+ * nicht mehr aus einer hardcodierten Liste. Schließt den offenen
  * Stalleintrag (end_date) und legt einen neuen an.
  */
 
@@ -35,13 +35,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $startDate = trim($_POST['start_date'] ?? date('Y-m-d'));
 
     if ($stallName === '' || !in_array($stallName, $stalls, true)) {
-        $errors[] = 'Bitte einen gueltigen Stall waehlen.';
+        $errors[] = 'Bitte einen gültigen Stall wählen.';
     }
 
     if (empty($errors)) {
         $db->beginTransaction();
         try {
-            // offenen Eintrag schliessen
+            // offenen Eintrag schließen
             $close = $db->prepare(
                 'UPDATE stall_history SET end_date = :d
                  WHERE cattle_id = :c AND farm_id = :f AND end_date IS NULL'
@@ -72,7 +72,7 @@ require_once __DIR__ . '/../templates/header.php';
     <h1 class="h3 mb-3">Stallwechsel &ndash; <?= e(formatEarTag($cattle['ear_tag'])) ?></h1>
     <?php foreach ($errors as $err): ?><div class="alert alert-danger"><?= e($err) ?></div><?php endforeach; ?>
     <?php if (empty($stalls)): ?>
-        <div class="alert alert-warning">Fuer diesen Betrieb sind noch keine Staelle hinterlegt.</div>
+        <div class="alert alert-warning">Für diesen Betrieb sind noch keine Ställe hinterlegt.</div>
     <?php endif; ?>
     <form method="post" class="card card-body">
         <?= csrfField() ?>
@@ -80,7 +80,7 @@ require_once __DIR__ . '/../templates/header.php';
         <div class="mb-3">
             <label class="form-label">Neuer Stall *</label>
             <select name="stall_name" class="form-select" required>
-                <option value="">-- waehlen --</option>
+                <option value="">-- wählen --</option>
                 <?php foreach ($stalls as $s): ?><option value="<?= e($s) ?>"><?= e($s) ?></option><?php endforeach; ?>
             </select>
         </div>

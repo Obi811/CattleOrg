@@ -2,13 +2,13 @@
 /**
  * push.php
  * -----------------------------------------------------------------------------
- * APNs-Versand (Apple Push Notification service) fuer die native iOS-App.
+ * APNs-Versand (Apple Push Notification service) für die native iOS-App.
  *
- * Authentifizierung token-basiert (.p8-Schluessel, Key ID, Team ID, Bundle ID),
- * JWT mit ES256, Zustellung ueber HTTP/2 via curl. Es werden KEINE zusaetzlichen
- * Composer-Pakete benoetigt (laeuft auf cPanel/PHP 8.3 ohne Root).
+ * Authentifizierung token-basiert (.p8-Schlüssel, Key ID, Team ID, Bundle ID),
+ * JWT mit ES256, Zustellung über HTTP/2 via curl. Es werden KEINE zusätzlichen
+ * Composer-Pakete benötigt (läuft auf cPanel/PHP 8.3 ohne Root).
  *
- * Konfiguration ausschliesslich ueber .env (siehe .env.example):
+ * Konfiguration ausschließlich über .env (siehe .env.example):
  *   APNS_ENABLED, APNS_KEY_PATH (.p8, AUSSERHALB von public/), APNS_KEY_ID,
  *   APNS_TEAM_ID, APNS_BUNDLE_ID, APNS_DEFAULT_ENV
  *
@@ -36,7 +36,7 @@ function apnsConfig(): array
 }
 
 /**
- * Prueft, ob der APNs-Versand grundsaetzlich konfiguriert/aktiv ist.
+ * Prüft, ob der APNs-Versand grundsätzlich konfiguriert/aktiv ist.
  */
 function apnsIsConfigured(array $cfg): bool
 {
@@ -61,28 +61,28 @@ function ecDerToConcat(string $der): string
 {
     $offset = 0;
     if (($der[$offset++] ?? '') !== "\x30") {
-        throw new RuntimeException('Ungueltige DER-Signatur (SEQUENCE erwartet).');
+        throw new RuntimeException('Ungültige DER-Signatur (SEQUENCE erwartet).');
     }
-    // Laenge der SEQUENCE (ggf. long form) ueberspringen
+    // Länge der SEQUENCE (ggf. long form) überspringen
     $seqLen = ord($der[$offset++]);
     if ($seqLen & 0x80) {
         $offset += ($seqLen & 0x7f);
     }
     // INTEGER R
     if (($der[$offset++] ?? '') !== "\x02") {
-        throw new RuntimeException('Ungueltige DER-Signatur (INTEGER R erwartet).');
+        throw new RuntimeException('Ungültige DER-Signatur (INTEGER R erwartet).');
     }
     $rLen = ord($der[$offset++]);
     $r = substr($der, $offset, $rLen);
     $offset += $rLen;
     // INTEGER S
     if (($der[$offset++] ?? '') !== "\x02") {
-        throw new RuntimeException('Ungueltige DER-Signatur (INTEGER S erwartet).');
+        throw new RuntimeException('Ungültige DER-Signatur (INTEGER S erwartet).');
     }
     $sLen = ord($der[$offset++]);
     $s = substr($der, $offset, $sLen);
 
-    // Fuehrende 0x00 entfernen (Vorzeichen) bzw. links auf 32 Byte auffuellen
+    // Führende 0x00 entfernen (Vorzeichen) bzw. links auf 32 Byte auffüllen
     $r = ltrim($r, "\x00");
     $s = ltrim($s, "\x00");
     $r = str_pad($r, 32, "\x00", STR_PAD_LEFT);
@@ -92,14 +92,14 @@ function ecDerToConcat(string $der): string
 }
 
 /**
- * Erzeugt ein APNs-Provider-JWT (ES256), gueltig max. 1 Stunde.
- * Das Token kann fuer mehrere Pushes wiederverwendet werden.
+ * Erzeugt ein APNs-Provider-JWT (ES256), gültig max. 1 Stunde.
+ * Das Token kann für mehrere Pushes wiederverwendet werden.
  */
 function apnsCreateJwt(array $cfg): string
 {
     $key = openssl_pkey_get_private(file_get_contents($cfg['key_path']));
     if ($key === false) {
-        throw new RuntimeException('APNs .p8-Schluessel konnte nicht gelesen werden.');
+        throw new RuntimeException('APNs .p8-Schlüssel konnte nicht gelesen werden.');
     }
     $header  = ['alg' => 'ES256', 'kid' => $cfg['key_id']];
     $claims  = ['iss' => $cfg['team_id'], 'iat' => time()];
@@ -115,19 +115,19 @@ function apnsCreateJwt(array $cfg): string
 }
 
 /**
- * Sendet eine Push-Nachricht an ein einzelnes Geraet.
+ * Sendet eine Push-Nachricht an ein einzelnes Gerät.
  *
  * @param string $jwt         vorab erzeugtes Provider-JWT (apnsCreateJwt)
  * @param string $deviceToken APNs Device-Token (Hex)
- * @param array  $payload     vollstaendiges Payload inkl. "aps"
+ * @param array  $payload     vollständiges Payload inkl. "aps"
  * @param string $environment "sandbox" | "production"
  * @param array  $cfg         apnsConfig()
- * @param array  $extraHeaders Zusaetzliche APNs-Header, z. B.
+ * @param array  $extraHeaders Zusätzliche APNs-Header, z. B.
  *               ['apns-collapse-id' => 'sum-3-20261014']. Werte werden als
- *               "name: wert" an die HTTP/2-Anfrage angehaengt.
+ *               "name: wert" an die HTTP/2-Anfrage angehängt.
  *
  * @return array{ok:bool,status:int,reason:?string,apns_id:?string,invalid:bool}
- *         invalid = true, wenn das Geraete-Token dauerhaft ungueltig ist (410 / BadDeviceToken)
+ *         invalid = true, wenn das Geräte-Token dauerhaft ungültig ist (410 / BadDeviceToken)
  */
 function apnsSend(string $jwt, string $deviceToken, array $payload, string $environment, array $cfg, array $extraHeaders = []): array
 {
@@ -191,7 +191,7 @@ function apnsSend(string $jwt, string $deviceToken, array $payload, string $envi
         }
     }
 
-    // Dauerhaft ungueltige Tokens: 410 (Unregistered) oder 400/BadDeviceToken
+    // Dauerhaft ungültige Tokens: 410 (Unregistered) oder 400/BadDeviceToken
     $invalid = ($status === 410)
         || ($reason !== null && in_array($reason, ['BadDeviceToken', 'Unregistered', 'DeviceTokenNotForTopic'], true));
 
@@ -205,10 +205,10 @@ function apnsSend(string $jwt, string $deviceToken, array $payload, string $envi
 }
 
 /**
- * Baut ein APNs-Payload fuer eine EINZELNE Mitteilung mit alert/sound und
+ * Baut ein APNs-Payload für eine EINZELNE Mitteilung mit alert/sound und
  * Deep-Link-Feldern (type/farm_id/cattle_id).
  *
- * @param ?int    $badge    optionaler Badge-Wert fuer das App-Symbol
+ * @param ?int    $badge    optionaler Badge-Wert für das App-Symbol
  * @param ?string $threadId optionale aps.thread-id (iOS gruppiert Mitteilungen
  *                          mit gleicher thread-id, z. B. je Betrieb)
  */
@@ -244,12 +244,12 @@ function buildApnsPayload(
 }
 
 /**
- * Baut ein APNs-Payload fuer eine SAMMEL-Mitteilung (Tagesuebersicht je Betrieb).
+ * Baut ein APNs-Payload für eine SAMMEL-Mitteilung (Tagesübersicht je Betrieb).
  * Die App soll beim Antippen in den Aufgaben-Tab springen (target = "tasks"),
  * optional direkt auf eine Kategorie gefiltert (filter = z. B. "traechtigkeit").
  *
- * @param string  $title    z. B. "Musterhof - heute faellig"
- * @param string  $body     z. B. "5 Traechtigkeitskontrollen, 2 Hemmstoffproben"
+ * @param string  $title    z. B. "Musterhof - heute fällig"
+ * @param string  $body     z. B. "5 Trächtigkeitskontrollen, 2 Hemmstoffproben"
  * @param int     $farmId   Betrieb, auf den die App wechseln soll
  * @param int     $badge    Gesamtzahl offener Aufgaben (App-Symbol)
  * @param string  $threadId aps.thread-id (iOS-Gruppierung, je Betrieb)

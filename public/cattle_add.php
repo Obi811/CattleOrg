@@ -4,7 +4,7 @@
  * -----------------------------------------------------------------------------
  * Neues Tier anlegen. Behebt Altlasten-Bugs:
  *   - korrekte Feldnamen (kein "geschstatuslecht"-Tippfehler)
- *   - CSRF-Schutz, Berechtigungs- und Demo-Pruefung
+ *   - CSRF-Schutz, Berechtigungs- und Demo-Prüfung
  *   - saubere Validierung, Ohrmarke wird normalisiert
  *   - farm_id wird serverseitig gesetzt (nicht aus dem Formular)
  */
@@ -39,13 +39,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors[] = 'Bitte eine Ohrmarkennummer eingeben.';
     }
     if ($form['rasse'] !== '' && !in_array($form['rasse'], cattleRaces(), true)) {
-        $errors[] = 'Ungueltige Rasse.';
+        $errors[] = 'Ungültige Rasse.';
     }
     if ($form['geschlecht'] !== '' && !in_array($form['geschlecht'], ['M', 'W'], true)) {
-        $errors[] = 'Ungueltiges Geschlecht.';
+        $errors[] = 'Ungültiges Geschlecht.';
     }
 
-    // Eindeutigkeit innerhalb des Betriebs pruefen
+    // Eindeutigkeit innerhalb des Betriebs prüfen
     if ($form['ear_tag'] !== '') {
         $chk = $db->prepare('SELECT COUNT(*) FROM cattle WHERE farm_id = :f AND ear_tag = :e');
         $chk->execute([':f' => $farmId, ':e' => $form['ear_tag']]);
@@ -99,7 +99,7 @@ require_once __DIR__ . '/../templates/header.php';
                 <div class="col-md-6">
                     <label class="form-label">Rasse</label>
                     <select name="rasse" class="form-select">
-                        <option value="">-- waehlen --</option>
+                        <option value="">-- wählen --</option>
                         <?php foreach (cattleRaces() as $r): ?>
                             <option value="<?= e($r) ?>" <?= $form['rasse'] === $r ? 'selected' : '' ?>><?= e($r) ?></option>
                         <?php endforeach; ?>
@@ -110,7 +110,7 @@ require_once __DIR__ . '/../templates/header.php';
                     <select name="geschlecht" class="form-select">
                         <option value="">--</option>
                         <option value="W" <?= $form['geschlecht'] === 'W' ? 'selected' : '' ?>>Weiblich</option>
-                        <option value="M" <?= $form['geschlecht'] === 'M' ? 'selected' : '' ?>>Maennlich</option>
+                        <option value="M" <?= $form['geschlecht'] === 'M' ? 'selected' : '' ?>>Männlich</option>
                     </select>
                 </div>
                 <div class="col-md-3">
@@ -145,7 +145,7 @@ require_once __DIR__ . '/../templates/header.php';
     </div>
 </div>
 <script>
-// Live-Suche fuer das Muttertier (mit Auth + farm_id serverseitig abgesichert)
+// Live-Suche für das Muttertier (mit Auth + farm_id serverseitig abgesichert)
 const mutterInput = document.getElementById('mutterInput');
 const mutterResults = document.getElementById('mutterResults');
 let timer = null;

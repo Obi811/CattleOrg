@@ -2,9 +2,9 @@
 /**
  * public/search_mutter.php
  * -----------------------------------------------------------------------------
- * AJAX-Endpunkt fuer die Muttertier-Suche.
+ * AJAX-Endpunkt für die Muttertier-Suche.
  *
- * Behebt die kritische Sicherheitsluecke der Altanwendung: HIER wird
+ * Behebt die kritische Sicherheitslücke der Altanwendung: HIER wird
  * Authentifizierung erzwungen UND streng auf den aktuellen Betrieb (farm_id)
  * gefiltert. So sind keine fremden Betriebsdaten abfragbar.
  */

@@ -2,8 +2,8 @@
 /**
  * templates/header.php
  * -----------------------------------------------------------------------------
- * Gemeinsamer Seitenkopf: HTML-Grundgeruest, Navigation mit Betriebsname,
- * Betriebswechsler und rollenbasierten Menuepunkten.
+ * Gemeinsamer Seitenkopf: HTML-Grundgerüst, Navigation mit Betriebsname,
+ * Betriebswechsler und rollenbasierten Menüpunkten.
  *
  * Erwartet, dass bootstrap.php bereits eingebunden wurde. Optional kann vor dem
  * Include $pageTitle gesetzt werden.
@@ -72,7 +72,7 @@ function navActive(string $file, string $current): string
                 <?php if (hasPermission('pregnancy.write') || hasPermission('cattle.read')): ?>
                 <li class="nav-item">
                     <a class="nav-link<?= navActive('pending_pregnancy.php', $currentFile) ?>" href="<?= e(url('pending_pregnancy.php')) ?>">
-                        <i class="bi bi-hourglass-split"></i> Traechtigkeit
+                        <i class="bi bi-hourglass-split"></i> Trächtigkeit
                     </a>
                 </li>
                 <?php endif; ?>

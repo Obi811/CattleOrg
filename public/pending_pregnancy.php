@@ -2,8 +2,8 @@
 /**
  * public/pending_pregnancy.php
  * -----------------------------------------------------------------------------
- * Offene Traechtigkeitskontrollen: Tiere, die besamt wurden, aber seit der
- * letzten Besamung noch keine Traechtigkeitskontrolle haben. Betriebsbezogen.
+ * Offene Trächtigkeitskontrollen: Tiere, die besamt wurden, aber seit der
+ * letzten Besamung noch keine Trächtigkeitskontrolle haben. Betriebsbezogen.
  */
 
 require_once __DIR__ . '/../includes/bootstrap.php';
@@ -33,10 +33,10 @@ $stmt = $db->prepare($sql);
 $stmt->execute([':f1' => $farmId, ':f2' => $farmId]);
 $rows = $stmt->fetchAll();
 
-$pageTitle = 'Offene Traechtigkeit';
+$pageTitle = 'Offene Trächtigkeit';
 require_once __DIR__ . '/../templates/header.php';
 ?>
-<h1 class="h3 mb-3">Offene Traechtigkeitskontrollen <span class="badge bg-secondary"><?= count($rows) ?></span></h1>
+<h1 class="h3 mb-3">Offene Trächtigkeitskontrollen <span class="badge bg-secondary"><?= count($rows) ?></span></h1>
 <div class="table-responsive">
     <table class="table table-striped align-middle mb-0">
         <thead><tr><th>Ohrmarke</th><th>Letzte Besamung</th><th>Bulle</th><th>Tage seither</th><th></th></tr></thead>

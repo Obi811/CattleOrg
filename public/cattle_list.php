@@ -3,7 +3,7 @@
  * public/cattle_list.php
  * -----------------------------------------------------------------------------
  * Tierliste des aktuellen Betriebs mit Filtern (Status, Rasse, Suche) und
- * Pagination. Alle Abfragen sind strikt auf farm_id beschraenkt.
+ * Pagination. Alle Abfragen sind strikt auf farm_id beschränkt.
  */
 
 require_once __DIR__ . '/../includes/bootstrap.php';
@@ -27,7 +27,7 @@ $page       = max(1, (int) ($_GET['page'] ?? 1));
 $perPage = 25;
 $offset = ($page - 1) * $perPage;
 
-// Stall-Auswahl (aktive Staelle des Betriebs)
+// Stall-Auswahl (aktive Ställe des Betriebs)
 $stallOptions = getStallList($db, $farmId);
 
 // ---- Dynamische, parametrisierte WHERE-Bedingung (Alias c = cattle) ----
@@ -50,7 +50,7 @@ if ($q !== '') {
     $where[] = '(c.ear_tag LIKE :q OR c.mutter LIKE :q)';
     $params[':q'] = '%' . $q . '%';
 }
-// Alter in Monaten -> ueber Geburtsdatum
+// Alter in Monaten -> über Geburtsdatum
 if ($minAge !== '' && ctype_digit($minAge)) {
     $where[] = 'c.birth_date IS NOT NULL AND TIMESTAMPDIFF(MONTH, c.birth_date, CURDATE()) >= :min_age';
     $params[':min_age'] = (int) $minAge;
@@ -85,7 +85,7 @@ $countStmt->execute($params);
 $total = (int) $countStmt->fetchColumn();
 $totalPages = max(1, (int) ceil($total / $perPage));
 
-// ---- Datensaetze (LIMIT/OFFSET sicher als int gebunden) ----
+// ---- Datensätze (LIMIT/OFFSET sicher als int gebunden) ----
 $sql = "SELECT c.id, c.ear_tag, c.birth_date, c.status, c.rasse, c.geschlecht, c.mutter
         FROM cattle c WHERE $whereSql
         ORDER BY c.ear_tag
@@ -99,7 +99,7 @@ $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 $stmt->execute();
 $cattle = $stmt->fetchAll();
 
-/** Baut Query-Strings fuer Pagination-Links unter Beibehaltung der Filter. */
+/** Baut Query-Strings für Pagination-Links unter Beibehaltung der Filter. */
 function pageUrl(int $p): string
 {
     $params = $_GET;
@@ -147,7 +147,7 @@ $erweitertAktiv = ($geschlecht !== '' || $minAge !== '' || $maxAge !== '' || $st
             <select name="geschlecht" class="form-select form-select-sm">
                 <option value="">Alle</option>
                 <option value="W" <?= $geschlecht === 'W' ? 'selected' : '' ?>>Weiblich</option>
-                <option value="M" <?= $geschlecht === 'M' ? 'selected' : '' ?>>Maennlich</option>
+                <option value="M" <?= $geschlecht === 'M' ? 'selected' : '' ?>>Männlich</option>
             </select>
         </div>
         <div class="col-md-2">
@@ -204,7 +204,7 @@ $erweitertAktiv = ($geschlecht !== '' || $minAge !== '' || $maxAge !== '' || $st
             </div>
             <div class="col-md-3 d-flex gap-2">
                 <button class="btn btn-primary btn-sm w-100"><i class="bi bi-funnel"></i> Filtern</button>
-                <a href="<?= e(url('cattle_list.php')) ?>" class="btn btn-outline-secondary btn-sm">Zuruecksetzen</a>
+                <a href="<?= e(url('cattle_list.php')) ?>" class="btn btn-outline-secondary btn-sm">Zurücksetzen</a>
             </div>
         </div>
     </div>
@@ -251,7 +251,7 @@ $erweitertAktiv = ($geschlecht !== '' || $minAge !== '' || $maxAge !== '' || $st
 <nav class="mt-3">
     <ul class="pagination pagination-sm justify-content-center">
         <li class="page-item <?= $page <= 1 ? 'disabled' : '' ?>">
-            <a class="page-link" href="<?= e(pageUrl(max(1, $page - 1))) ?>">Zurueck</a>
+            <a class="page-link" href="<?= e(pageUrl(max(1, $page - 1))) ?>">Zurück</a>
         </li>
         <li class="page-item disabled"><span class="page-link">Seite <?= $page ?> / <?= $totalPages ?></span></li>
         <li class="page-item <?= $page >= $totalPages ? 'disabled' : '' ?>">

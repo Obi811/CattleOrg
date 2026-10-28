@@ -5,7 +5,7 @@
  * Laedt die Umgebungskonfiguration aus der `.env`-Datei, konfiguriert die
  * Fehlerbehandlung passend zur Umgebung und baut die zentrale PDO-Verbindung auf.
  *
- * Diese Datei wird ausschliesslich ueber bootstrap.php eingebunden.
+ * Diese Datei wird ausschließlich über bootstrap.php eingebunden.
  */
 
 declare(strict_types=1);
@@ -16,7 +16,7 @@ declare(strict_types=1);
 
 /**
  * Liest eine .env-Datei (einfaches KEY=VALUE-Format) und stellt die Werte
- * ueber getenv()/$_ENV bereit. Werte koennen in "..." oder '...' stehen.
+ * über getenv()/$_ENV bereit. Werte können in "..." oder '...' stehen.
  */
 function loadEnv(string $path): void
 {
@@ -37,7 +37,7 @@ function loadEnv(string $path): void
         [$key, $value] = explode('=', $line, 2);
         $key   = trim($key);
         $value = trim($value);
-        // Umschliessende Anfuehrungszeichen entfernen
+        // Umschließende Anführungszeichen entfernen
         if (strlen($value) >= 2) {
             $first = $value[0];
             $last  = $value[strlen($value) - 1];
@@ -64,7 +64,7 @@ function env(string $key, ?string $default = null): ?string
     return $value;
 }
 
-// .env liegt im Projekt-Root (eine Ebene ueber includes/)
+// .env liegt im Projekt-Root (eine Ebene über includes/)
 loadEnv(dirname(__DIR__) . '/.env');
 
 // ---------------------------------------------------------------------------
@@ -128,9 +128,9 @@ try {
     error_log('DB-Verbindung fehlgeschlagen: ' . $e->getMessage());
     http_response_code(500);
     if (IS_PRODUCTION) {
-        exit('Es ist ein interner Fehler aufgetreten. Bitte spaeter erneut versuchen.');
+        exit('Es ist ein interner Fehler aufgetreten. Bitte später erneut versuchen.');
     }
     exit('Datenbankverbindung fehlgeschlagen: ' . $e->getMessage());
 }
 
-// $db steht ab hier global zur Verfuegung.
+// $db steht ab hier global zur Verfügung.

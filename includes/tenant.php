@@ -5,16 +5,16 @@
  * Mandantenlogik (Multi-Tenancy) und rollenbasiertes Berechtigungssystem.
  *
  * Zentrales Prinzip: JEDE fachliche Query wird auf den aktuellen Betrieb
- * (farm_id) beschraenkt. Diese Datei stellt die Funktionen bereit, die das
+ * (farm_id) beschränkt. Diese Datei stellt die Funktionen bereit, die das
  * konsistent und an EINER Stelle erzwingen.
  *
- * Wird ueber bootstrap.php eingebunden (nach config/functions/auth).
+ * Wird über bootstrap.php eingebunden (nach config/functions/auth).
  */
 
 declare(strict_types=1);
 
 // ---------------------------------------------------------------------------
-// 1. Rollen-Defaults (Quelle der Wahrheit fuer Berechtigungen)
+// 1. Rollen-Defaults (Quelle der Wahrheit für Berechtigungen)
 // ---------------------------------------------------------------------------
 
 /**
@@ -44,7 +44,7 @@ function roleDefaults(): array
 }
 
 /**
- * Alle bekannten Permission-Strings (fuer die UI / Validierung).
+ * Alle bekannten Permission-Strings (für die UI / Validierung).
  */
 function allPermissions(): array
 {
@@ -105,9 +105,9 @@ function getUserFarms(PDO $db, int $userId): array
 }
 
 /**
- * Setzt den aktiven Betrieb in der Session, nachdem die Berechtigung geprueft wurde.
- * Berechnet und cached Rolle + Permissions. Gibt false zurueck, wenn der User
- * keinen Zugriff auf den Betrieb hat (System-Admin darf jeden Betrieb waehlen).
+ * Setzt den aktiven Betrieb in der Session, nachdem die Berechtigung geprüft wurde.
+ * Berechnet und cached Rolle + Permissions. Gibt false zurück, wenn der User
+ * keinen Zugriff auf den Betrieb hat (System-Admin darf jeden Betrieb wählen).
  */
 function setCurrentFarm(PDO $db, int $userId, int $farmId): bool
 {
@@ -127,7 +127,7 @@ function setCurrentFarm(PDO $db, int $userId, int $farmId): bool
         return true;
     }
 
-    // Regulaerer User: Zugehoerigkeit pruefen
+    // Regulärer User: Zugehörigkeit prüfen
     $stmt = $db->prepare(
         'SELECT fu.id AS farm_user_id, fu.role, f.name, f.is_demo
          FROM farm_users fu
@@ -154,7 +154,7 @@ function setCurrentFarm(PDO $db, int $userId, int $farmId): bool
 }
 
 /**
- * Gibt die aktuelle farm_id zurueck. Leitet zu farm_select.php um, wenn keiner gesetzt.
+ * Gibt die aktuelle farm_id zurück. Leitet zu farm_select.php um, wenn keiner gesetzt.
  */
 function getCurrentFarmId(): int
 {
@@ -165,7 +165,7 @@ function getCurrentFarmId(): int
 }
 
 /**
- * Stellt sicher, dass ein gueltiger Betriebs-Kontext gesetzt ist.
+ * Stellt sicher, dass ein gültiger Betriebs-Kontext gesetzt ist.
  */
 function requireFarmAccess(): void
 {
@@ -176,7 +176,7 @@ function requireFarmAccess(): void
 }
 
 // ---------------------------------------------------------------------------
-// 3. Berechtigungs-Pruefungen
+// 3. Berechtigungs-Prüfungen
 // ---------------------------------------------------------------------------
 
 function currentRole(): ?string
@@ -185,7 +185,7 @@ function currentRole(): ?string
 }
 
 /**
- * Prueft, ob der aktuelle User im aktuellen Betrieb eine Berechtigung hat.
+ * Prüft, ob der aktuelle User im aktuellen Betrieb eine Berechtigung hat.
  */
 function hasPermission(string $permission): bool
 {
@@ -201,7 +201,7 @@ function requirePermission(string $permission): void
     requireFarmAccess();
     if (!hasPermission($permission)) {
         http_response_code(403);
-        flash('error', 'Keine Berechtigung fuer diese Aktion (' . $permission . ').', 'danger');
+        flash('error', 'Keine Berechtigung für diese Aktion (' . $permission . ').', 'danger');
         redirect(url('index.php'));
     }
 }
@@ -222,17 +222,17 @@ function requireWriteAccess(): void
 {
     if (isDemoBetrieb()) {
         http_response_code(403);
-        flash('error', 'Im Demo-Betrieb sind keine Aenderungen moeglich.', 'warning');
+        flash('error', 'Im Demo-Betrieb sind keine Änderungen möglich.', 'warning');
         redirect(url('index.php'));
     }
 }
 
 // ---------------------------------------------------------------------------
-// 5. Staelle pro Betrieb (ersetzt hardcodierte Liste)
+// 5. Ställe pro Betrieb (ersetzt hardcodierte Liste)
 // ---------------------------------------------------------------------------
 
 /**
- * Liefert die aktiven Staelle eines Betriebs aus der DB.
+ * Liefert die aktiven Ställe eines Betriebs aus der DB.
  */
 function getStallList(PDO $db, int $farmId): array
 {

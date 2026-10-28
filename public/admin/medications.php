@@ -2,8 +2,8 @@
 /**
  * admin/medications.php
  * -----------------------------------------------------------------------------
- * System-Admin: vollstaendige Verwaltung des GLOBALEN Medikamentenkatalogs
- * (anlegen, bearbeiten, loeschen). Loeschen ist nur moeglich, wenn keine
+ * System-Admin: vollständige Verwaltung des GLOBALEN Medikamentenkatalogs
+ * (anlegen, bearbeiten, löschen). Löschen ist nur möglich, wenn keine
  * Behandlung das Medikament referenziert (FK-Schutz).
  */
 
@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     } elseif ($action === 'delete') {
         $id = (int) ($_POST['id'] ?? 0);
-        // Referenzierung pruefen
+        // Referenzierung prüfen
         $name = $db->prepare('SELECT name FROM medications WHERE id = :id');
         $name->execute([':id' => $id]);
         $medName = $name->fetchColumn();
@@ -54,11 +54,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $ref = $db->prepare('SELECT COUNT(*) FROM treatments WHERE medication = :n');
             $ref->execute([':n' => $medName]);
             if ((int) $ref->fetchColumn() > 0) {
-                flash('error', 'Loeschen nicht moeglich: Medikament wird in Behandlungen verwendet.', 'danger');
+                flash('error', 'Löschen nicht möglich: Medikament wird in Behandlungen verwendet.', 'danger');
             } else {
                 $del = $db->prepare('DELETE FROM medications WHERE id = :id');
                 $del->execute([':id' => $id]);
-                flash('success', 'Medikament geloescht.', 'success');
+                flash('success', 'Medikament gelöscht.', 'success');
             }
         }
         redirect(url('admin/medications.php'));
@@ -109,7 +109,7 @@ require_once __DIR__ . '/../../templates/header.php';
                             <td><?= e($m['wz_milk']) ?></td><td><?= e($m['wz_fleisch']) ?></td>
                             <td class="text-end">
                                 <a class="btn btn-sm btn-outline-primary" href="?edit=<?= (int) $m['id'] ?>"><i class="bi bi-pencil"></i></a>
-                                <form method="post" class="d-inline" onsubmit="return confirm('Wirklich loeschen?');">
+                                <form method="post" class="d-inline" onsubmit="return confirm('Wirklich löschen?');">
                                     <?= csrfField() ?>
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="id" value="<?= (int) $m['id'] ?>">
