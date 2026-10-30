@@ -7,6 +7,7 @@
  */
 
 require_once __DIR__ . '/../includes/bootstrap.php';
+require_once __DIR__ . '/../includes/planned_treatments.php';
 
 requireLogin();
 requirePermission('cattle.read');
@@ -26,6 +27,12 @@ if (!$cattle) {
 // --- POST-Handler: Hemmstoffproben (anlegen / Status aktualisieren) ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     requireCsrf();
+    // Geplante Behandlungen: Erledigt / Verwerfen / Löschen (zentrale Logik,
+    // prüft treatments.write + Demo-Schutz selbst). Danach zurück aufs Profil.
+    if (in_array($_POST['action'] ?? '', ['plan_complete', 'plan_dismiss', 'plan_delete'], true)) {
+        handlePlannedTreatmentAction($db, $farmId);
+        redirect(url('cattle_show.php') . '?id=' . $id);
+    }
     if (hasPermission('treatments.write') && !isDemoBetrieb()) {
         // Neue Hemmstoffprobe als "versendet" anlegen
         if (isset($_POST['action']) && $_POST['action'] === 'probe_add') {
@@ -99,6 +106,9 @@ $tr = $db->prepare(
 );
 $tr->execute([':id' => $id, ':f' => $farmId]);
 $treatments = $tr->fetchAll();
+
+// Geplante Behandlungen dieses Tieres (offene zuerst)
+$plannedTreatments = loadPlannedForCattle($db, $farmId, $id);
 
 // --- Wartezeit-Auswertung: läuft aktuell noch eine Wartezeit? ---
 $warnhinweis = false;         // true, wenn irgendeine Wartezeit noch läuft
@@ -270,6 +280,9 @@ require_once __DIR__ . '/../templates/header.php';
         <?php if (hasPermission('cattle.write')): ?>
         <div class="card mt-3"><div class="card-body d-grid gap-2">
             <a class="btn btn-outline-success btn-sm" href="<?= e(url('add_treatment.php')) ?>?cattle_id=<?= $id ?>"><i class="bi bi-capsule"></i> Behandlung</a>
+            <?php if (hasPermission('treatments.write')): ?>
+            <a class="btn btn-outline-primary btn-sm" href="<?= e(url('planned_treatment_add.php')) ?>?cattle_id=<?= $id ?>"><i class="bi bi-calendar-plus"></i> Behandlung planen</a>
+            <?php endif; ?>
             <a class="btn btn-outline-success btn-sm" href="<?= e(url('insemination_add.php')) ?>?cattle_id=<?= $id ?>"><i class="bi bi-gender-female"></i> Besamung</a>
             <a class="btn btn-outline-success btn-sm" href="<?= e(url('add_pregnancy.php')) ?>?cattle_id=<?= $id ?>"><i class="bi bi-clipboard-check"></i> Trächtigkeitskontrolle</a>
             <a class="btn btn-outline-success btn-sm" href="<?= e(url('change_stall.php')) ?>?cattle_id=<?= $id ?>"><i class="bi bi-house-door"></i> Stallwechsel</a>
@@ -298,6 +311,71 @@ require_once __DIR__ . '/../templates/header.php';
                                 <?php else: ?>-<?php endif; ?>
                             </td>
                             <td><small><?= e($t['notes']) ?></small></td>
+                        </tr>
+                    <?php endforeach; ?></tbody>
+                </table></div>
+            <?php endif; ?>
+        </div></div>
+
+        <div class="card mb-3"><div class="card-body">
+            <?php $canTreatWrite = hasPermission('treatments.write') && !isDemoBetrieb(); ?>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h2 class="h6 mb-0">Geplante Behandlungen (<?= count($plannedTreatments) ?>)</h2>
+                <?php if ($canTreatWrite): ?>
+                    <a class="btn btn-outline-primary btn-sm" href="<?= e(url('planned_treatment_add.php')) ?>?cattle_id=<?= (int) $id ?>">
+                        <i class="bi bi-calendar-plus"></i> Planen
+                    </a>
+                <?php endif; ?>
+            </div>
+            <?php if (empty($plannedTreatments)): ?>
+                <p class="text-muted small mb-0">Keine geplanten Behandlungen.</p>
+            <?php else: ?>
+                <div class="table-responsive"><table class="table table-sm mb-0 align-middle">
+                    <thead><tr><th>Geplant für</th><th>Medikament</th><th>Art</th><th>Dosis</th><th>Status</th><?php if ($canTreatWrite): ?><th></th><?php endif; ?></tr></thead>
+                    <tbody><?php foreach ($plannedTreatments as $pt): ?>
+                        <?php
+                            $pstatus = $pt['status'];
+                            $pBadge = $pstatus === 'geplant' ? 'primary' : ($pstatus === 'erledigt' ? 'success' : 'secondary');
+                            $isOpen = $pstatus === 'geplant';
+                        ?>
+                        <tr>
+                            <td><?= e(formatDate($pt['planned_date'])) ?></td>
+                            <td><?= e($pt['medication']) ?></td>
+                            <td><?= e($pt['type']) ?></td>
+                            <td><?= e($pt['dosage'] ?? '') ?></td>
+                            <td><span class="badge bg-<?= $pBadge ?>"><?= e($pstatus) ?></span></td>
+                            <?php if ($canTreatWrite): ?>
+                            <td class="text-end">
+                                <?php if ($isOpen): ?>
+                                    <a class="btn btn-outline-secondary btn-sm" href="<?= e(url('planned_treatment_add.php')) ?>?id=<?= (int) $pt['id'] ?>" title="Bearbeiten"><i class="bi bi-pencil"></i></a>
+                                    <form method="post" class="d-inline">
+                                        <?= csrfField() ?>
+                                        <input type="hidden" name="action" value="plan_complete">
+                                        <input type="hidden" name="planned_id" value="<?= (int) $pt['id'] ?>">
+                                        <input type="hidden" name="treatment_date" value="<?= e(date('Y-m-d')) ?>">
+                                        <button class="btn btn-outline-success btn-sm" title="Als erledigt übernehmen (Behandlung erfassen)"
+                                            onclick="return confirm('Geplante Behandlung als erledigt übernehmen? Es wird eine Behandlung mit heutigem Datum erfasst.');">
+                                            <i class="bi bi-check-lg"></i>
+                                        </button>
+                                    </form>
+                                    <form method="post" class="d-inline">
+                                        <?= csrfField() ?>
+                                        <input type="hidden" name="action" value="plan_dismiss">
+                                        <input type="hidden" name="planned_id" value="<?= (int) $pt['id'] ?>">
+                                        <button class="btn btn-outline-danger btn-sm" title="Verwerfen"
+                                            onclick="return confirm('Geplante Behandlung verwerfen?');"><i class="bi bi-x-lg"></i></button>
+                                    </form>
+                                <?php else: ?>
+                                    <form method="post" class="d-inline">
+                                        <?= csrfField() ?>
+                                        <input type="hidden" name="action" value="plan_delete">
+                                        <input type="hidden" name="planned_id" value="<?= (int) $pt['id'] ?>">
+                                        <button class="btn btn-outline-danger btn-sm" title="Eintrag löschen"
+                                            onclick="return confirm('Diesen geplanten Eintrag endgültig löschen?');"><i class="bi bi-trash"></i></button>
+                                    </form>
+                                <?php endif; ?>
+                            </td>
+                            <?php endif; ?>
                         </tr>
                     <?php endforeach; ?></tbody>
                 </table></div>

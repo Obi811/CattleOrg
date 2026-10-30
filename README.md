@@ -521,3 +521,30 @@ CattleOrg/
 ---
 
 © CattleOrg – Mandantenfähige Rinderverwaltung. Lizenz: MIT.
+
+
+
+---
+
+## Neu in diesem Update (Planung, Gruppenaktionen, Trockensteher)
+
+- **Geplante Behandlungen** – Behandlungen auf ein festes Datum einplanen; sie
+  erscheinen an dem Tag in den Aufgaben und im Kalender und werden per „Erledigt"
+  zu einer echten Behandlung. Benötigt **Migration 015**
+  (`migrations/015_create_planned_treatments.sql`).
+- **Gruppenaktionen pro Box** – mehrere Tiere einer Box gemeinsam umstallen,
+  inaktivieren, behandeln oder eine Behandlung einplanen (`public/group_actions.php`,
+  Navigationspunkt „Gruppenaktionen", nur mit `cattle.write`).
+- **Startseiten-Kachel „Trockensteher"** (statt „Offene Trächtigkeit") mit Verlinkung
+  auf die gefilterte Tierliste (`trockensteher=1`).
+- **API** – neue additive Endpunkte für geplante Behandlungen, Totgeburten,
+  Gruppenaktionen sowie Kennzahlen Milchkühe/Trockensteher und Cattle-Filter
+  `trockensteher=1` / `milchkuh=1`. Details: `docs/API_IOS.md`, Abschnitt 13.
+
+Vollständige Liste der Änderungen: siehe `CHANGELOG.md`.
+
+### Migrationsliste (Auszug, neueste zuerst)
+- `015_create_planned_treatments.sql` – Tabelle `planned_treatments` (geplante Behandlungen).
+- `014_create_stillbirths.sql` – Tabelle `stillbirths` (Totgeburten je Kuh).
+- `010_api_ios_extensions.sql` – API-/iOS-Erweiterungen (u. a. `abgang_grund`).
+- `009_create_device_tokens.sql` – Push-Geräte-Tokens.
