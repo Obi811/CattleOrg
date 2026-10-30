@@ -166,7 +166,7 @@ require_once __DIR__ . '/../../templates/header.php';
                                     <button class="btn btn-sm btn-outline-primary"><i class="bi bi-check"></i></button>
                                 </form>
                             </td>
-                            <td><small><?= e(formatDate($m['last_login'], 'd.m.y H:i', '-')) ?></small></td>
+                            <td><small><?= e(formatDate($m['last_login'], 'd.m.Y H:i', '-')) ?></small></td>
                             <td class="text-end">
                                 <form method="post" onsubmit="return confirm('Zuordnung wirklich entfernen?');">
                                     <?= csrfField() ?>

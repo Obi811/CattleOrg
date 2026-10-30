@@ -221,7 +221,7 @@ require_once __DIR__ . '/../../templates/header.php';
                     <input type="email" name="email" class="form-control form-control-sm" value="<?= e($user['email']) ?>"></div>
                 <div class="mb-2 small text-muted">
                     System-Admin: <?= (int) $user['is_admin'] === 1 ? '<span class="badge bg-danger">Ja</span>' : '<span class="badge bg-secondary">Nein</span>' ?>
-                    &middot; Letzter Login: <?= e(formatDate($user['last_login'], 'd.m.y H:i', '-')) ?>
+                    &middot; Letzter Login: <?= e(formatDate($user['last_login'], 'd.m.Y H:i', '-')) ?>
                 </div>
                 <button class="btn btn-primary btn-sm w-100"><i class="bi bi-check-lg"></i> Speichern</button>
             </form>

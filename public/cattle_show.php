@@ -77,6 +77,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             flash('success', 'Bemerkung gelöscht.', 'success');
             redirect(url('cattle_show.php') . '?id=' . $id);
         }
+        // Totgeburt (fehlerhaften Eintrag) löschen
+        if (isset($_POST['action']) && $_POST['action'] === 'stillbirth_delete') {
+            $sbId = (int) ($_POST['stillbirth_id'] ?? 0);
+            $del = $db->prepare('DELETE FROM stillbirths WHERE id = :id AND farm_id = :f AND mother_cattle_id = :c');
+            $del->execute([':id' => $sbId, ':f' => $farmId, ':c' => $id]);
+            flash('success', 'Totgeburt gelöscht.', 'success');
+            redirect(url('cattle_show.php') . '?id=' . $id);
+        }
     }
 }
 
@@ -157,6 +165,43 @@ $off = $db->prepare(
 $off->execute([':f' => $farmId, ':id' => $id, ':id2' => $id, ':eartag' => $cattle['ear_tag']]);
 $offspring = $off->fetchAll();
 
+// --- Totgeburten dieser Kuh (ohne Ohrmarke, aus stillbirths) ---
+$sb = $db->prepare(
+    'SELECT id, birth_date, sex, comment
+     FROM stillbirths
+     WHERE farm_id = :f AND mother_cattle_id = :id
+     ORDER BY birth_date DESC, id DESC'
+);
+$sb->execute([':f' => $farmId, ':id' => $id]);
+$stillbirths = $sb->fetchAll();
+
+// Kalbungen = lebende Kälber + Totgeburten, gemeinsam chronologisch (neueste zuerst).
+$sexLabel = ['maennlich' => 'männlich', 'weiblich' => 'weiblich', 'unbekannt' => 'unbekannt'];
+$calvings = [];
+foreach ($offspring as $kalb) {
+    $calvings[] = [
+        'type'       => 'kalb',
+        'birth_date' => $kalb['birth_date'],
+        'id'         => (int) $kalb['id'],
+        'ear_tag'    => $kalb['ear_tag'],
+        'geschlecht' => $kalb['geschlecht'],
+        'rasse'      => $kalb['rasse'],
+        'mehrling'   => $kalb['mehrling'],
+    ];
+}
+foreach ($stillbirths as $s) {
+    $calvings[] = [
+        'type'       => 'totgeburt',
+        'birth_date' => $s['birth_date'],
+        'sb_id'      => (int) $s['id'],
+        'geschlecht' => $sexLabel[$s['sex']] ?? 'unbekannt',
+        'comment'    => $s['comment'],
+    ];
+}
+usort($calvings, static function ($a, $b) {
+    return strcmp((string) $b['birth_date'], (string) $a['birth_date']);
+});
+
 // --- Bemerkungen (neueste zuerst) ---
 $rm = $db->prepare(
     'SELECT r.id, r.remark_date, r.body, r.created_at, u.username AS author
@@ -205,7 +250,7 @@ require_once __DIR__ . '/../templates/header.php';
         <div class="card"><div class="card-body">
             <h2 class="h6 text-muted">Stammdaten</h2>
             <dl class="row mb-0 small">
-                <dt class="col-5">Geburtsdatum</dt><dd class="col-7"><?= e(formatDate($cattle['birth_date'], 'd.m.y', '-')) ?></dd>
+                <dt class="col-5">Geburtsdatum</dt><dd class="col-7"><?= e(formatDate($cattle['birth_date'], 'd.m.Y', '-')) ?></dd>
                 <dt class="col-5">Alter</dt><dd class="col-7"><?= e(calcAge($cattle['birth_date'])) ?></dd>
                 <dt class="col-5">Rasse</dt><dd class="col-7"><?= e($cattle['rasse'] ?: '-') ?></dd>
                 <dt class="col-5">Geschlecht</dt><dd class="col-7"><?= e($cattle['geschlecht'] ?: '-') ?></dd>
@@ -217,9 +262,9 @@ require_once __DIR__ . '/../templates/header.php';
                     }
                 ?></dd>
                 <dt class="col-5">Mehrling</dt><dd class="col-7"><?= e($cattle['mehrling']) ?></dd>
-                <dt class="col-5">Zugang</dt><dd class="col-7"><?= e(formatDate($cattle['zugang'], 'd.m.y', '-')) ?></dd>
-                <dt class="col-5">Abgang</dt><dd class="col-7"><?= e(formatDate($cattle['abgang'], 'd.m.y', '-')) ?></dd>
-                <dt class="col-5">Verendung</dt><dd class="col-7"><?= e(formatDate($cattle['verendung'], 'd.m.y', '-')) ?></dd>
+                <dt class="col-5">Zugang</dt><dd class="col-7"><?= e(formatDate($cattle['zugang'], 'd.m.Y', '-')) ?></dd>
+                <dt class="col-5">Abgang</dt><dd class="col-7"><?= e(formatDate($cattle['abgang'], 'd.m.Y', '-')) ?></dd>
+                <dt class="col-5">Verendung</dt><dd class="col-7"><?= e(formatDate($cattle['verendung'], 'd.m.Y', '-')) ?></dd>
             </dl>
         </div></div>
         <?php if (hasPermission('cattle.write')): ?>
@@ -284,17 +329,51 @@ require_once __DIR__ . '/../templates/header.php';
         </div></div>
 
         <div class="card mb-3"><div class="card-body">
-            <h2 class="h6">Kalbungen / Nachkommen (<?= count($offspring) ?>)</h2>
-            <?php if (empty($offspring)): ?><p class="text-muted small mb-0">Keine Kalbungen / Nachkommen erfasst.</p><?php else: ?>
-                <div class="table-responsive"><table class="table table-sm mb-0">
-                    <thead><tr><th>Geburtsdatum</th><th>Kalb (Ohrmarke)</th><th>Geschlecht</th><th>Rasse</th><th>Mehrling</th></tr></thead>
-                    <tbody><?php foreach ($offspring as $kalb): ?>
+            <?php $canCattleWrite = hasPermission('cattle.write') && !isDemoBetrieb(); ?>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <h2 class="h6 mb-0">Kalbungen / Nachkommen (<?= count($calvings) ?>)</h2>
+                <?php if ($canCattleWrite && ($cattle['geschlecht'] ?? '') === 'W'): ?>
+                    <a class="btn btn-outline-primary btn-sm" href="<?= e(url('stillbirth_add.php')) ?>?cattle_id=<?= (int) $id ?>">
+                        <i class="bi bi-plus-lg"></i> Totgeburt erfassen
+                    </a>
+                <?php endif; ?>
+            </div>
+            <?php if (empty($calvings)): ?><p class="text-muted small mb-0">Keine Kalbungen / Nachkommen erfasst.</p><?php else: ?>
+                <div class="table-responsive"><table class="table table-sm mb-0 align-middle">
+                    <thead><tr><th>Geburtsdatum</th><th>Kalb (Ohrmarke)</th><th>Geschlecht</th><th>Rasse</th><th>Mehrling</th><?php if ($canCattleWrite): ?><th></th><?php endif; ?></tr></thead>
+                    <tbody><?php foreach ($calvings as $row): ?>
                         <tr>
-                            <td><?= e(formatDate($kalb['birth_date'], 'd.m.y', '-')) ?></td>
-                            <td><?= cattleLink((int) $kalb['id'], $kalb['ear_tag']) ?></td>
-                            <td><?= e($kalb['geschlecht'] ?: '-') ?></td>
-                            <td><?= e($kalb['rasse'] ?: '-') ?></td>
-                            <td><?= e($kalb['mehrling']) ?></td>
+                            <td><?= e(formatDate($row['birth_date'], 'd.m.Y', '-')) ?></td>
+                            <?php if ($row['type'] === 'totgeburt'): ?>
+                                <td>
+                                    <span class="badge bg-secondary">Totgeburt</span>
+                                    <?php if (!empty($row['comment'])): ?>
+                                        <div class="small text-muted"><?= e($row['comment']) ?></div>
+                                    <?php endif; ?>
+                                </td>
+                                <td><?= e($row['geschlecht'] ?: '-') ?></td>
+                                <td>-</td>
+                                <td>-</td>
+                                <?php if ($canCattleWrite): ?>
+                                    <td class="text-end">
+                                        <form method="post" class="d-inline">
+                                            <?= csrfField() ?>
+                                            <input type="hidden" name="action" value="stillbirth_delete">
+                                            <input type="hidden" name="stillbirth_id" value="<?= (int) $row['sb_id'] ?>">
+                                            <button class="btn btn-outline-danger btn-sm" title="Totgeburt löschen"
+                                                onclick="return confirm('Diese Totgeburt wirklich löschen?');">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                <?php endif; ?>
+                            <?php else: ?>
+                                <td><?= cattleLink((int) $row['id'], $row['ear_tag']) ?></td>
+                                <td><?= e($row['geschlecht'] ?: '-') ?></td>
+                                <td><?= e($row['rasse'] ?: '-') ?></td>
+                                <td><?= e($row['mehrling']) ?></td>
+                                <?php if ($canCattleWrite): ?><td></td><?php endif; ?>
+                            <?php endif; ?>
                         </tr>
                     <?php endforeach; ?></tbody>
                 </table></div>
@@ -352,7 +431,7 @@ require_once __DIR__ . '/../templates/header.php';
                 <div class="table-responsive"><table class="table table-sm mb-0">
                     <thead><tr><th>Stall</th><th>Von</th><th>Bis</th></tr></thead>
                     <tbody><?php foreach ($stallHistory as $s): ?>
-                        <tr><td><?= e($s['stall_name']) ?></td><td><?= e(formatDate($s['start_date'])) ?></td><td><?= e(formatDate($s['end_date'], 'd.m.y', 'aktuell')) ?></td></tr>
+                        <tr><td><?= e($s['stall_name']) ?></td><td><?= e(formatDate($s['start_date'])) ?></td><td><?= e(formatDate($s['end_date'], 'd.m.Y', 'aktuell')) ?></td></tr>
                     <?php endforeach; ?></tbody>
                 </table></div>
             <?php endif; ?>

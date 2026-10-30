@@ -57,7 +57,7 @@ ob_start();
     th{background:#eee;}
 </style></head><body>
     <h1>Kalender &ndash; <?= e($monthNames[$month]) ?> <?= $year ?> (<?= e($farmName) ?>)</h1>
-    <div class="meta">Erstellt am <?= e(date('d.m.y H:i')) ?> &middot; <?= count($events) ?> Ereignisse</div>
+    <div class="meta">Erstellt am <?= e(date('d.m.Y H:i')) ?> &middot; <?= count($events) ?> Ereignisse</div>
     <table>
         <thead><tr><th>Datum</th><th>Ohrmarke</th><th>Typ</th><th>Info</th></tr></thead>
         <tbody>

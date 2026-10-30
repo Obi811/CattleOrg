@@ -28,9 +28,27 @@ $stmt = $db->prepare('SELECT COUNT(*) FROM cattle WHERE farm_id = :f AND status 
 $stmt->execute([':f' => $farmId, ':s' => 'Aktiv']);
 $stats['aktiv'] = (int) $stmt->fetchColumn();
 
-$stmt = $db->prepare('SELECT COUNT(*) FROM cattle WHERE farm_id = :f AND status = :s');
-$stmt->execute([':f' => $farmId, ':s' => 'Inaktiv']);
-$stats['inaktiv'] = (int) $stmt->fetchColumn();
+// Milchkühe: aktive, weibliche Tiere mit mindestens einer Kalbung.
+// Eine Kalbung ist (a) ein lebendes Kalb (Tier, dessen Mutter diese Kuh ist –
+// über mutter_id ODER über die Ohrmarke im Feld mutter) ODER (b) eine erfasste
+// Totgeburt (Tabelle stillbirths). Nur :f als Platzhalter (EMULATE_PREPARES=false).
+$stmt = $db->prepare(
+    'SELECT COUNT(*) FROM cattle c
+     WHERE c.farm_id = :f AND c.status = "Aktiv" AND c.geschlecht = "W"
+       AND (
+         EXISTS (
+           SELECT 1 FROM cattle k
+           WHERE k.farm_id = c.farm_id AND k.id <> c.id
+             AND (k.mutter_id = c.id OR (k.mutter IS NOT NULL AND k.mutter <> "" AND k.mutter = c.ear_tag))
+         )
+         OR EXISTS (
+           SELECT 1 FROM stillbirths s
+           WHERE s.farm_id = c.farm_id AND s.mother_cattle_id = c.id
+         )
+       )'
+);
+$stmt->execute([':f' => $farmId]);
+$stats['milchkuehe'] = (int) $stmt->fetchColumn();
 
 // Offene Trächtigkeitskontrollen: besamt, aber noch keine Kontrolle danach
 $stmt = $db->prepare(
@@ -141,10 +159,12 @@ details.js-collapsible[open] .collapse-chevron { transform: rotate(180deg); }
         </div></div>
     </div>
     <div class="col-6 col-md-3">
-        <div class="card text-center"><div class="card-body">
-            <div class="display-6"><?= $stats['inaktiv'] ?></div>
-            <div class="text-muted">Inaktive Tiere</div>
-        </div></div>
+        <a class="text-decoration-none text-reset" href="<?= e(url('cattle_list.php')) ?>?status=Aktiv&amp;geschlecht=W&amp;has_calving=1" title="Aktive Kühe mit mindestens einer Kalbung anzeigen">
+            <div class="card text-center h-100"><div class="card-body">
+                <div class="display-6"><?= $stats['milchkuehe'] ?></div>
+                <div class="text-muted">Milchkühe</div>
+            </div></div>
+        </a>
     </div>
     <div class="col-6 col-md-3">
         <div class="card text-center"><div class="card-body">
