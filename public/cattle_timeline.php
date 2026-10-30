@@ -70,7 +70,7 @@ require_once __DIR__ . '/../templates/header.php';
                 <li class="list-group-item d-flex align-items-start gap-3">
                     <span class="badge bg-<?= e($ev['color']) ?> rounded-pill"><i class="bi bi-<?= e($ev['icon']) ?>"></i></span>
                     <div>
-                        <div class="fw-semibold"><?= e($ev['title']) ?> <small class="text-muted">&middot; <?= e($ev['date']) ?></small></div>
+                        <div class="fw-semibold"><?= e($ev['title']) ?> <small class="text-muted">&middot; <?= e(formatDate($ev['date'])) ?></small></div>
                         <div class="small"><?= e($ev['text']) ?></div>
                     </div>
                 </li>

@@ -107,7 +107,7 @@ require_once __DIR__ . '/../../templates/header.php';
                                     </button>
                                 </form>
                             </td>
-                            <td><small><?= e($u['last_login'] ?: '-') ?></small></td>
+                            <td><small><?= e(formatDate($u['last_login'], 'd.m.y H:i', '-')) ?></small></td>
                             <td>
                                 <form method="post" class="d-flex gap-1" onsubmit="return confirm('Passwort zurücksetzen?');">
                                     <?= csrfField() ?>
