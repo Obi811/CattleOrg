@@ -86,6 +86,13 @@ function navActive(string $file, string $current): string
                         <i class="bi bi-check2-square"></i> Aufgaben
                     </a>
                 </li>
+                <?php if (hasPermission('cattle.write')): ?>
+                <li class="nav-item">
+                    <a class="nav-link<?= navActive('group_actions.php', $currentFile) ?>" href="<?= e(url('group_actions.php')) ?>">
+                        <i class="bi bi-grid-3x3-gap"></i> Gruppenaktionen
+                    </a>
+                </li>
+                <?php endif; ?>
                 <?php if (hasPermission('medications.manage')): ?>
                 <li class="nav-item">
                     <a class="nav-link<?= navActive('add_medications.php', $currentFile) ?>" href="<?= e(url('add_medications.php')) ?>">

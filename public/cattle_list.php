@@ -21,6 +21,7 @@ $minAge     = trim($_GET['min_age'] ?? '');   // Alter in Monaten (mind.)
 $maxAge     = trim($_GET['max_age'] ?? '');   // Alter in Monaten (max.)
 $stall      = trim($_GET['stall'] ?? '');     // aktueller Stall (offene Stallhistorie)
 $hasCalving = isset($_GET['has_calving']) && $_GET['has_calving'] === '1';
+$trockensteher = isset($_GET['trockensteher']) && $_GET['trockensteher'] === '1';
 $insemFrom  = trim($_GET['insem_from'] ?? ''); // Besamung von
 $insemTo    = trim($_GET['insem_to'] ?? '');   // Besamung bis
 $page       = max(1, (int) ($_GET['page'] ?? 1));
@@ -73,6 +74,12 @@ if ($hasCalving) {
         . '        AND (k.mutter_id = c.id OR (k.mutter IS NOT NULL AND k.mutter <> "" AND k.mutter = c.ear_tag)))'
         . ' OR EXISTS (SELECT 1 FROM stillbirths s WHERE s.farm_id = c.farm_id AND s.mother_cattle_id = c.id)'
         . ')';
+}
+// Trockensteher: aktives weibliches Tier mit Trockensteller/Versiegler und ohne
+// Kalbung seit dem letzten solchen Behandlungsdatum. Logik zentral in
+// trockensteherCattleCondition() (keine Platzhalter -> EMULATE_PREPARES-sicher).
+if ($trockensteher) {
+    $where[] = trockensteherCattleCondition('c');
 }
 // Besamungsdatum-Bereich
 if ($insemFrom !== '') {
@@ -132,7 +139,7 @@ require_once __DIR__ . '/../templates/header.php';
 
 <?php
 // Sind erweiterte Filter aktiv? Dann Bereich aufgeklappt anzeigen.
-$erweitertAktiv = ($geschlecht !== '' || $minAge !== '' || $maxAge !== '' || $stall !== '' || $hasCalving || $insemFrom !== '' || $insemTo !== '');
+$erweitertAktiv = ($geschlecht !== '' || $minAge !== '' || $maxAge !== '' || $stall !== '' || $hasCalving || $trockensteher || $insemFrom !== '' || $insemTo !== '');
 ?>
 <form class="card card-body mb-3" method="get">
     <div class="row g-2 align-items-end">
@@ -206,6 +213,10 @@ $erweitertAktiv = ($geschlecht !== '' || $minAge !== '' || $maxAge !== '' || $st
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox" name="has_calving" value="1" id="hasCalving" <?= $hasCalving ? 'checked' : '' ?>>
                     <label class="form-check-label" for="hasCalving">Nur Tiere mit Kalbung</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="trockensteher" value="1" id="trockensteher" <?= $trockensteher ? 'checked' : '' ?>>
+                    <label class="form-check-label" for="trockensteher">Nur Trockensteher</label>
                 </div>
             </div>
             <div class="col-md-3 d-flex gap-2">

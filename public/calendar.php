@@ -7,6 +7,7 @@
  */
 
 require_once __DIR__ . '/../includes/bootstrap.php';
+require_once __DIR__ . '/../includes/planned_treatments.php';
 
 requireLogin();
 requirePermission('cattle.read');
@@ -50,6 +51,11 @@ $p = $db->prepare('SELECT p.check_date AS d, p.result, c.id AS cattle_id, c.ear_
                    WHERE p.farm_id=:f AND p.check_date BETWEEN :a AND :b');
 $p->execute([':f' => $farmId, ':a' => $first, ':b' => $last]);
 foreach ($p->fetchAll() as $r) { $add($r['d'], (int) $r['cattle_id'], $r['ear_tag'], 'Trächtigkeit: ' . $r['result']); }
+
+// Geplante (offene) Behandlungen im Monat (Migration 015)
+foreach (loadPlannedInRange($db, $farmId, $first, $last) as $r) {
+    $add($r['d'], (int) $r['cattle_id'], $r['ear_tag'], 'Geplant: ' . $r['medication']);
+}
 
 // Kalender-Grid aufbauen
 $daysInMonth = (int) date('t', strtotime($first));

@@ -260,3 +260,22 @@ Wenn eine neue Version kommt:
 
 **Bei Fragen oder Problemen:** Notieren Sie die genaue Fehlermeldung (inkl. cPanel-Error-Log)
 und melden Sie sich – dann helfe ich gezielt weiter.
+
+
+
+---
+
+## Update: Migration 015 (Geplante Behandlungen)
+
+Dieses Update bringt die Tabelle `planned_treatments` mit. Bei einem Update einer
+bestehenden Installation:
+
+1. **Backup** der Datenbank erstellen (phpMyAdmin → Exportieren).
+2. In phpMyAdmin die Datenbank auswählen → Reiter **SQL** (oder **Importieren**) →
+   Inhalt von **`migrations/015_create_planned_treatments.sql`** ausführen.
+   Die Migration ist **idempotent** (`CREATE TABLE IF NOT EXISTS`) und kann gefahrlos
+   erneut ausgeführt werden. Rollback: `migrations/rollback/015_rollback.sql`.
+3. Die geänderten/neuen Dateien hochladen (siehe ANLEITUNG.md im Update-Paket).
+
+Bei einer **Neuinstallation** ist Migration 015 bereits in
+`migrations/install_all.sql` enthalten – keine separaten Schritte nötig.

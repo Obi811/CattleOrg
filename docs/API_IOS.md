@@ -379,3 +379,112 @@ Migration `010_api_ios_extensions.sql` ergaenzt additiv und idempotent:
 
 Rollback: `migrations/rollback/010_rollback.sql`. Die Aenderungen sind ebenfalls
 in `migrations/install_all.sql` eingepflegt (Neuinstallationen).
+
+
+
+---
+
+## 13. Neue Endpunkte: Planung, Totgeburten, Gruppenaktionen, Kennzahlen
+
+> Additiv eingeführt mit Migration **015** (`planned_treatments`). Bestehende
+> Endpunkte bleiben unverändert. Alle Endpunkte erfordern Bearer-Token und
+> Betriebskontext (`X-Farm-Id`); Schreibzugriffe im Demo-Betrieb → `403
+> DEMO_READONLY`. Antwortformat wie gehabt: `{success, data, meta}` bzw.
+> `{success:false, error:{code,message}}`. IDs als Query-Parameter.
+
+### 13.1 Geplante Behandlungen
+
+Berechtigung: lesen `treatments.read`, schreiben `treatments.write`.
+
+| Methode | Pfad | Zweck |
+|--------|------|-------|
+| GET | `/api/v1/planned-treatments` | Liste (Filter `cattle_id`, `status`, `from`, `to`; paginiert) |
+| GET | `/api/v1/planned-treatments?id=123` | Einzelne geplante Behandlung |
+| POST | `/api/v1/planned-treatments` | Anlegen |
+| PUT | `/api/v1/planned-treatments?id=123` | Bearbeiten (nur solange `status=geplant`) |
+| DELETE | `/api/v1/planned-treatments?id=123` | Löschen |
+| POST | `/api/v1/planned-treatments/complete?id=123` | Erledigen → erzeugt Behandlung |
+
+`status`-Werte: `geplant`, `erledigt`, `verworfen`.
+
+**POST-Body (anlegen):**
+```json
+{
+  "cattle_id": 12,
+  "planned_date": "2026-11-05",
+  "medication": "Cobactan",
+  "type": "Antibiotikum",
+  "dosage": "20 ml",
+  "notes": "Nachbehandlung Tag 3"
+}
+```
+**Antwort (201):** vollständiger Datensatz inkl. `id`, `status: "geplant"`.
+
+**Erledigen – POST `/complete?id=123`**, Body optional:
+```json
+{ "treatment_date": "2026-11-05" }
+```
+Antwort (201):
+```json
+{ "success": true, "data": {
+    "planned_treatment": { "id": 123, "status": "erledigt", "treatment_id": 456 },
+    "treatment": { "id": 456, "cattle_id": 12, "treatment_date": "2026-11-05", "medication": "Cobactan" }
+} }
+```
+Fehler: `409 CONFLICT`, wenn die geplante Behandlung nicht mehr offen ist.
+
+### 13.2 Totgeburten
+
+Berechtigung: lesen `cattle.read`, schreiben `cattle.write`. Totgeburten sind
+einer Mutter-Kuh zugeordnet (`mother_cattle_id`) und zählen wie eine Kalbung.
+
+| Methode | Pfad | Zweck |
+|--------|------|-------|
+| GET | `/api/v1/stillbirths?cattle_id=12` | Totgeburten einer Kuh (paginiert) |
+| GET | `/api/v1/stillbirths?id=5` | Einzelne Totgeburt |
+| POST | `/api/v1/stillbirths` | Anlegen |
+| DELETE | `/api/v1/stillbirths?id=5` | Löschen |
+
+**POST-Body:**
+```json
+{ "cattle_id": 12, "birth_date": "2026-10-01", "sex": "weiblich", "comment": "..." }
+```
+`sex`: `maennlich` | `weiblich` | `unbekannt` (Standard `unbekannt`).
+
+Zusätzlich liefert `GET /api/v1/cattle?id=12` im Detail jetzt ein Feld
+`stillbirths[]` (additiv zu den Kalbungen).
+
+### 13.3 Gruppenaktionen pro Box
+
+Berechtigung: lesen `cattle.read`; `move`/`inactivate` → `cattle.write`,
+`treat`/`plan` → `treatments.write`.
+
+| Methode | Pfad | Zweck |
+|--------|------|-------|
+| GET | `/api/v1/group-actions?stall=BoxA` | Aktive Tiere mit offenem Aufenthalt in der Box |
+| POST | `/api/v1/group-actions` | Gruppenaktion für mehrere Tiere |
+
+**POST-Body je nach `action`:**
+```json
+{ "action": "move",       "cattle_ids": [1,2,3], "target_stall": "BoxB", "date": "2026-11-01" }
+{ "action": "inactivate", "cattle_ids": [1,2],   "date": "2026-11-01", "grund": "Verkauf" }
+{ "action": "treat",      "cattle_ids": [1,2,3], "medication": "Cobactan", "type": "Antibiotikum", "dosage": "20 ml", "date": "2026-11-01" }
+{ "action": "plan",       "cattle_ids": [1,2,3], "medication": "Cobactan", "type": "Antibiotikum", "planned_date": "2026-11-05" }
+```
+Antwort: `{ "action": "...", "processed": 3, "cattle_ids": [1,2,3] }`.
+Alle Tier-IDs müssen zum Betrieb gehören (sonst `422 VALIDATION`); die Aktion läuft
+transaktional (alles oder nichts).
+
+### 13.4 Kennzahlen & Cattle-Filter
+
+- `GET /api/v1/dashboard` enthält additiv:
+  - `data.geplante_faellig[]` + `data.counts.geplante_faellig`
+  - `data.kennzahlen.milchkuehe` und `data.kennzahlen.trockensteher`
+- `GET /api/v1/cattle` – neue Filter:
+  - `trockensteher=1` – aktive, weibliche Tiere mit Trockensteller/Versiegler und
+    ohne Kalbung seither.
+  - `milchkuh=1` – aktive, weibliche Tiere mit mindestens einer Kalbung/Totgeburt.
+
+### 13.5 Fehlercodes (Auszug)
+`VALIDATION` (422), `NOT_FOUND` (404), `CONFLICT` (409), `DEMO_READONLY` (403),
+`METHOD_NOT_ALLOWED` (405), `SERVER_ERROR` (500).

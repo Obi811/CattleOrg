@@ -114,12 +114,34 @@ $wa = $db->prepare($wasql);
 $wa->execute([':f1' => $farmId, ':f2' => $farmId, ':f3' => $farmId]);
 $wartezeitAktiv = $wa->fetchAll();
 
+// --- 6. Faellige geplante Behandlungen (planned_treatments, status=geplant) ---
+require_once __DIR__ . '/../../../includes/planned_treatments.php';
+$geplanteFaellig = loadPlannedDue($db, $farmId);
+
+// --- Kennzahlen Milchkuehe / Trockensteher (additiv) ---
+$milchCond = milchkuhCattleCondition('c');
+$ms = $db->prepare(
+    'SELECT COUNT(*) FROM cattle c
+      WHERE c.farm_id = :f AND c.status = "Aktiv" AND c.geschlecht = "W" AND ' . $milchCond
+);
+$ms->execute([':f' => $farmId]);
+$milchkuehe = (int) $ms->fetchColumn();
+
+$trockCond = trockensteherCattleCondition('c');
+$ts = $db->prepare(
+    'SELECT COUNT(*) FROM cattle c
+      WHERE c.farm_id = :f AND c.status = "Aktiv" AND c.geschlecht = "W" AND ' . $trockCond
+);
+$ts->execute([':f' => $farmId]);
+$trockensteher = (int) $ts->fetchColumn();
+
 $counts = [
     'weiterbehandlungen'  => count($weiterbehandlungen),
     'hemmstoff_faellig'   => count($hemmstoffFaellig),
     'hemmstoff_versendet' => count($hemmstoffVersendet),
     'tu_faellig'          => count($tuFaellig),
     'wartezeit_aktiv'     => count($wartezeitAktiv),
+    'geplante_faellig'    => count($geplanteFaellig),
 ];
 $counts['gesamt'] = array_sum($counts);
 
@@ -129,5 +151,10 @@ jsonSuccess([
     'hemmstoff_versendet' => $hemmstoffVersendet,
     'tu_faellig'          => $tuFaellig,
     'wartezeit_aktiv'     => $wartezeitAktiv,
+    'geplante_faellig'    => $geplanteFaellig,
     'counts'              => $counts,
+    'kennzahlen'          => [
+        'milchkuehe'    => $milchkuehe,
+        'trockensteher' => $trockensteher,
+    ],
 ]);

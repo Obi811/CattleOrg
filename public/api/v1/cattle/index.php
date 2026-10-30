@@ -119,10 +119,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         );
         $hp->execute([':id' => $id, ':f' => $farmId]);
 
+        // Totgeburten dieser Kuh (additiv zu den Kalbungen)
+        $sb = $db->prepare(
+            'SELECT id, birth_date, sex, comment, created_at
+               FROM stillbirths WHERE mother_cattle_id = :id AND farm_id = :f
+              ORDER BY birth_date DESC, id DESC'
+        );
+        $sb->execute([':id' => $id, ':f' => $farmId]);
+
         $row['current_stall']    = $currentStall;
         $row['wartezeit']        = $wartezeit;
         $row['pregnancy']        = $pregnancy;
         $row['hemmstoff_probes'] = $hp->fetchAll();
+        $row['stillbirths']      = $sb->fetchAll();
 
         jsonSuccess($row);
     }
@@ -137,6 +146,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
     $stallFilter = trim((string) ($_GET['stall'] ?? ''));
     $wartezeitFilter = (string) ($_GET['wartezeit'] ?? '') === '1';
     $traechtigFilter = (string) ($_GET['traechtig'] ?? '') === '1';
+    $trockensteherFilter = (string) ($_GET['trockensteher'] ?? '') === '1';
+    $milchkuhFilter      = (string) ($_GET['milchkuh'] ?? '') === '1';
     // Filter analog zur Web-Tieruebersicht (public/cattle_list.php):
     // Rasse (exakter Match) sowie Alter in Monaten (min./max.) ueber birth_date.
     $rasse  = trim((string) ($_GET['rasse'] ?? ''));
@@ -181,6 +192,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                             WHERE pc.cattle_id = c.id AND pc.farm_id = c.farm_id AND pc.result = '+'
                               AND pc.check_date = (SELECT MAX(pc2.check_date) FROM pregnancy_checks pc2
                                                    WHERE pc2.cattle_id = c.id AND pc2.farm_id = c.farm_id))";
+    }
+    // Filter: Trockensteher (zentrale Logik, nur korrelierte Unterabfragen)
+    if ($trockensteherFilter) {
+        $where[] = trockensteherCattleCondition('c');
+    }
+    // Filter: Milchkuehe (mind. eine Kalbung/Totgeburt)
+    if ($milchkuhFilter) {
+        $where[] = milchkuhCattleCondition('c');
     }
     $whereSql = implode(' AND ', $where);
 

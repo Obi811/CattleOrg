@@ -45,6 +45,11 @@ if (!isset($nachbehandlungen)) { return; }
                            href="<?= e(url('add_treatment.php')) ?>?cattle_id=<?= (int) $w['cattle_id'] ?>&medication=<?= urlencode($w['medication']) ?>&dosage=<?= urlencode((string) $w['dosage']) ?>&type=<?= urlencode($w['type']) ?>">
                             <i class="bi bi-check-lg"></i> Ja, nachbehandeln
                         </a>
+                        <a class="btn btn-outline-primary btn-sm"
+                           href="<?= e(url('planned_treatment_add.php')) ?>?cattle_id=<?= (int) $w['cattle_id'] ?>&medication=<?= urlencode($w['medication']) ?>&dosage=<?= urlencode((string) $w['dosage']) ?>&type=<?= urlencode($w['type']) ?>"
+                           title="Nachbehandlung für einen festen Tag planen">
+                            <i class="bi bi-calendar-plus"></i> Planen
+                        </a>
                         <form method="post" class="d-inline">
                             <?= csrfField() ?>
                             <input type="hidden" name="action" value="weiterbehandeln">
@@ -207,6 +212,70 @@ if (!isset($nachbehandlungen)) { return; }
                     <?= $r['comment'] ? '<span class="text-muted">(' . e($r['comment']) . ')</span>' : '' ?>
                 </span>
                 <span class="badge bg-<?= $r['result'] === '+' ? 'success' : ($r['result'] === '-' ? 'danger' : 'secondary') ?>"><?= e($r['result']) ?></span>
+            </li>
+        <?php endforeach; ?>
+    </ul>
+</div>
+<?php endif; ?>
+
+<!-- ================= 5. Geplante Behandlungen (fällig/überfällig) ================= -->
+<?php if (!empty($geplanteFaellig)): ?>
+<div class="card mb-4 shadow-sm">
+    <div class="card-header bg-primary-subtle fw-semibold">
+        <i class="bi bi-calendar-check"></i> Geplante Behandlungen &ndash; heute fällig
+        <span class="badge bg-primary ms-1"><?= count($geplanteFaellig) ?></span>
+    </div>
+    <ul class="list-group list-group-flush">
+        <?php foreach ($geplanteFaellig as $g): ?>
+            <?php $ueber = (int) ($g['tage_ueberfaellig'] ?? 0); ?>
+            <li class="list-group-item <?= $ueber > 0 ? 'list-group-item-warning' : '' ?>">
+                <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
+                    <div>
+                        <div class="fw-semibold"><?= cattleLink((int) $g['cattle_id'], $g['ear_tag']) ?></div>
+                        <div class="small text-muted">
+                            Geplant für <?= e(formatDate($g['planned_date'])) ?>:
+                            <?= e($g['medication']) ?> (<?= e($g['type']) ?>)<?= $g['dosage'] ? ', ' . e($g['dosage']) : '' ?>
+                            <?php if ($ueber > 0): ?>
+                                <span class="badge bg-warning text-dark ms-1"><?= $ueber ?> Tag(e) überfällig</span>
+                            <?php endif; ?>
+                        </div>
+                        <?php if (!empty($g['notes'])): ?>
+                            <div class="small text-muted mt-1"><i class="bi bi-sticky"></i> <?= e($g['notes']) ?></div>
+                        <?php endif; ?>
+                    </div>
+                    <?php if ($canWrite): ?>
+                    <div class="d-flex flex-wrap gap-1 justify-content-end align-items-end">
+                        <form method="post" class="row g-1 align-items-end" style="max-width:260px;">
+                            <?= csrfField() ?>
+                            <input type="hidden" name="action" value="plan_complete">
+                            <input type="hidden" name="planned_id" value="<?= (int) $g['id'] ?>">
+                            <div class="col-7">
+                                <label class="form-label mb-0 small">Behandlungsdatum</label>
+                                <input type="date" name="treatment_date" value="<?= e($heute) ?>" class="form-control form-control-sm">
+                            </div>
+                            <div class="col-5">
+                                <button class="btn btn-success btn-sm w-100 mt-3"
+                                    onclick="return confirm('Geplante Behandlung als erledigt übernehmen? Es wird eine Behandlung erfasst.');">
+                                    <i class="bi bi-check-lg"></i> Erledigt
+                                </button>
+                            </div>
+                        </form>
+                        <a class="btn btn-outline-secondary btn-sm"
+                           href="<?= e(url('planned_treatment_add.php')) ?>?id=<?= (int) $g['id'] ?>" title="Geplante Behandlung bearbeiten">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <form method="post" class="d-inline">
+                            <?= csrfField() ?>
+                            <input type="hidden" name="action" value="plan_dismiss">
+                            <input type="hidden" name="planned_id" value="<?= (int) $g['id'] ?>">
+                            <button class="btn btn-outline-danger btn-sm"
+                                onclick="return confirm('Geplante Behandlung verwerfen?');">
+                                <i class="bi bi-x-lg"></i> Verwerfen
+                            </button>
+                        </form>
+                    </div>
+                    <?php endif; ?>
+                </div>
             </li>
         <?php endforeach; ?>
     </ul>
