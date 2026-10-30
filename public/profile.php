@@ -98,7 +98,7 @@ require_once __DIR__ . '/../templates/header.php';
                     <dt class="col-sm-4">E-Mail</dt>
                     <dd class="col-sm-8"><?= e($user['email'] ?: '-') ?></dd>
                     <dt class="col-sm-4">Erstellt am</dt>
-                    <dd class="col-sm-8"><?= e($user['created_at'] ?: '-') ?></dd>
+                    <dd class="col-sm-8"><?= e(formatDate($user['created_at'], 'd.m.y H:i', '-')) ?></dd>
                     <dt class="col-sm-4">Letzter Login</dt>
                     <dd class="col-sm-8"><?= e($user['last_login'] ?: '-') ?></dd>
                     <dt class="col-sm-4">System-Admin</dt>

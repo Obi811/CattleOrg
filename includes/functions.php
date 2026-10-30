@@ -17,6 +17,22 @@ if (!function_exists('e')) {
     }
 }
 
+if (!function_exists('formatDate')) {
+    /**
+     * Datum fuer die Anzeige im deutschen Format (Standard: TT.MM.JJ, z. B. 31.10.26).
+     * Leere/ungueltige Werte liefern $empty. Nur fuer die Anzeige, nicht fuer Formularfelder oder API.
+     */
+    function formatDate(?string $value, string $format = 'd.m.y', string $empty = ''): string
+    {
+        $value = trim((string) $value);
+        if ($value === '' || str_starts_with($value, '0000-00-00')) {
+            return $empty;
+        }
+        $ts = strtotime($value);
+        return $ts === false ? $value : date($format, $ts);
+    }
+}
+
 if (!function_exists('redirect')) {
     /**
      * Weiterleitung auf eine andere Seite und Skript beenden.

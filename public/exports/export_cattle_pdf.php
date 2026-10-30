@@ -55,7 +55,7 @@ ob_start();
         <?php foreach ($cattle as $c): ?>
             <tr>
                 <td><?= e(formatEarTag($c['ear_tag'])) ?></td>
-                <td><?= e($c['birth_date']) ?></td>
+                <td><?= e(formatDate($c['birth_date'])) ?></td>
                 <td><?= e($c['rasse']) ?></td>
                 <td><?= e($c['geschlecht']) ?></td>
                 <td><?= e(formatEarTag($c['mutter'])) ?></td>

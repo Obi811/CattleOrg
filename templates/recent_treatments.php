@@ -35,7 +35,7 @@ $showRecentCardHeader = $showRecentCardHeader ?? true;
                     <div>
                         <div class="fw-semibold">
                             <?= cattleLink((int) $b['cattle_id'], $b['ear_tag']) ?>
-                            <span class="text-muted small ms-1"><?= e(date('d.m.Y', strtotime($b['treatment_date']))) ?></span>
+                            <span class="text-muted small ms-1"><?= e(formatDate($b['treatment_date'])) ?></span>
                         </div>
                         <div class="small text-muted">
                             <?= e($b['medication']) ?> (<?= e($b['type']) ?>)<?= $b['dosage'] ? ', ' . e($b['dosage']) : '' ?>
@@ -45,7 +45,7 @@ $showRecentCardHeader = $showRecentCardHeader ?? true;
                         <?php if (!empty($b['wartezeit_aktiv'])): ?>
                             <span class="badge bg-danger" title="Milch/Fleisch gesperrt bis zum Ende der Wartezeit">
                                 <i class="bi bi-exclamation-triangle"></i>
-                                Wartezeit bis <?= e(date('d.m.Y', strtotime($b['wartezeit_ende']))) ?>
+                                Wartezeit bis <?= e(formatDate($b['wartezeit_ende'])) ?>
                             </span>
                         <?php elseif (!empty($b['wartezeit_ende'])): ?>
                             <span class="badge bg-success-subtle text-success-emphasis" title="Wartezeit beendet">

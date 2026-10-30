@@ -205,7 +205,7 @@ require_once __DIR__ . '/../templates/header.php';
         <div class="card"><div class="card-body">
             <h2 class="h6 text-muted">Stammdaten</h2>
             <dl class="row mb-0 small">
-                <dt class="col-5">Geburtsdatum</dt><dd class="col-7"><?= e($cattle['birth_date'] ?: '-') ?></dd>
+                <dt class="col-5">Geburtsdatum</dt><dd class="col-7"><?= e(formatDate($cattle['birth_date'], 'd.m.y', '-')) ?></dd>
                 <dt class="col-5">Alter</dt><dd class="col-7"><?= e(calcAge($cattle['birth_date'])) ?></dd>
                 <dt class="col-5">Rasse</dt><dd class="col-7"><?= e($cattle['rasse'] ?: '-') ?></dd>
                 <dt class="col-5">Geschlecht</dt><dd class="col-7"><?= e($cattle['geschlecht'] ?: '-') ?></dd>
@@ -217,9 +217,9 @@ require_once __DIR__ . '/../templates/header.php';
                     }
                 ?></dd>
                 <dt class="col-5">Mehrling</dt><dd class="col-7"><?= e($cattle['mehrling']) ?></dd>
-                <dt class="col-5">Zugang</dt><dd class="col-7"><?= e($cattle['zugang'] ?: '-') ?></dd>
-                <dt class="col-5">Abgang</dt><dd class="col-7"><?= e($cattle['abgang'] ?: '-') ?></dd>
-                <dt class="col-5">Verendung</dt><dd class="col-7"><?= e($cattle['verendung'] ?: '-') ?></dd>
+                <dt class="col-5">Zugang</dt><dd class="col-7"><?= e(formatDate($cattle['zugang'], 'd.m.y', '-')) ?></dd>
+                <dt class="col-5">Abgang</dt><dd class="col-7"><?= e(formatDate($cattle['abgang'], 'd.m.y', '-')) ?></dd>
+                <dt class="col-5">Verendung</dt><dd class="col-7"><?= e(formatDate($cattle['verendung'], 'd.m.y', '-')) ?></dd>
             </dl>
         </div></div>
         <?php if (hasPermission('cattle.write')): ?>
@@ -240,7 +240,7 @@ require_once __DIR__ . '/../templates/header.php';
                     <thead><tr><th>Datum</th><th>Medikament</th><th>Art</th><th>Dosis</th><th title="Wartezeit Milch (Tage)">WZ&nbsp;Milch</th><th title="Wartezeit Fleisch (Tage)">WZ&nbsp;Fleisch</th><th>Wartezeit bis</th><th>Notiz</th></tr></thead>
                     <tbody><?php foreach ($treatments as $t): ?>
                         <tr<?= !empty($t['wz_aktiv']) ? ' class="table-danger"' : '' ?>>
-                            <td><?= e($t['treatment_date']) ?></td>
+                            <td><?= e(formatDate($t['treatment_date'])) ?></td>
                             <td><?= e($t['medication']) ?></td>
                             <td><?= e($t['type']) ?></td>
                             <td><?= e($t['dosage']) ?></td>
@@ -248,7 +248,7 @@ require_once __DIR__ . '/../templates/header.php';
                             <td><?= $t['wz_fleisch'] !== null ? (int) $t['wz_fleisch'] : '-' ?></td>
                             <td>
                                 <?php if (!empty($t['wz_ende'])): ?>
-                                    <?= e(date('d.m.Y', strtotime($t['wz_ende']))) ?>
+                                    <?= e(formatDate($t['wz_ende'])) ?>
                                     <?php if (!empty($t['wz_aktiv'])): ?><span class="badge bg-danger">läuft</span><?php else: ?><span class="badge bg-success">frei</span><?php endif; ?>
                                 <?php else: ?>-<?php endif; ?>
                             </td>
@@ -265,7 +265,7 @@ require_once __DIR__ . '/../templates/header.php';
                 <div class="table-responsive"><table class="table table-sm mb-0">
                     <thead><tr><th>Datum</th><th>Bulle</th><th>Art</th></tr></thead>
                     <tbody><?php foreach ($inseminations as $i): ?>
-                        <tr><td><?= e($i['date']) ?></td><td><?= e($i['bull_name']) ?></td><td><?= e($i['type']) ?></td></tr>
+                        <tr><td><?= e(formatDate($i['date'])) ?></td><td><?= e($i['bull_name']) ?></td><td><?= e($i['type']) ?></td></tr>
                     <?php endforeach; ?></tbody>
                 </table></div>
             <?php endif; ?>
@@ -277,7 +277,7 @@ require_once __DIR__ . '/../templates/header.php';
                 <div class="table-responsive"><table class="table table-sm mb-0">
                     <thead><tr><th>Datum</th><th>Ergebnis</th><th>Kommentar</th></tr></thead>
                     <tbody><?php foreach ($pregnancy as $p): ?>
-                        <tr><td><?= e($p['check_date']) ?></td><td><?= e($p['result']) ?></td><td><?= e($p['comment']) ?></td></tr>
+                        <tr><td><?= e(formatDate($p['check_date'])) ?></td><td><?= e($p['result']) ?></td><td><?= e($p['comment']) ?></td></tr>
                     <?php endforeach; ?></tbody>
                 </table></div>
             <?php endif; ?>
@@ -290,7 +290,7 @@ require_once __DIR__ . '/../templates/header.php';
                     <thead><tr><th>Geburtsdatum</th><th>Kalb (Ohrmarke)</th><th>Geschlecht</th><th>Rasse</th><th>Mehrling</th></tr></thead>
                     <tbody><?php foreach ($offspring as $kalb): ?>
                         <tr>
-                            <td><?= e($kalb['birth_date'] ?: '-') ?></td>
+                            <td><?= e(formatDate($kalb['birth_date'], 'd.m.y', '-')) ?></td>
                             <td><?= cattleLink((int) $kalb['id'], $kalb['ear_tag']) ?></td>
                             <td><?= e($kalb['geschlecht'] ?: '-') ?></td>
                             <td><?= e($kalb['rasse'] ?: '-') ?></td>
@@ -310,7 +310,7 @@ require_once __DIR__ . '/../templates/header.php';
                     <thead><tr><th>Datum</th><th>Nummer</th><th>Status</th><?php if (hasPermission('treatments.write')): ?><th></th><?php endif; ?></tr></thead>
                     <tbody><?php foreach ($hemmstoffProbes as $probe): ?>
                         <tr>
-                            <td><?= e($probe['probe_date']) ?></td>
+                            <td><?= e(formatDate($probe['probe_date'])) ?></td>
                             <td><?= e($probe['nummer']) ?></td>
                             <td>
                                 <?php
@@ -352,7 +352,7 @@ require_once __DIR__ . '/../templates/header.php';
                 <div class="table-responsive"><table class="table table-sm mb-0">
                     <thead><tr><th>Stall</th><th>Von</th><th>Bis</th></tr></thead>
                     <tbody><?php foreach ($stallHistory as $s): ?>
-                        <tr><td><?= e($s['stall_name']) ?></td><td><?= e($s['start_date']) ?></td><td><?= e($s['end_date'] ?: 'aktuell') ?></td></tr>
+                        <tr><td><?= e($s['stall_name']) ?></td><td><?= e(formatDate($s['start_date'])) ?></td><td><?= e(formatDate($s['end_date'], 'd.m.y', 'aktuell')) ?></td></tr>
                     <?php endforeach; ?></tbody>
                 </table></div>
             <?php endif; ?>
@@ -388,7 +388,7 @@ require_once __DIR__ . '/../templates/header.php';
                                 <div>
                                     <div><?= nl2br(e($r['body'])) ?></div>
                                     <div class="small text-muted">
-                                        <?= e(date('d.m.Y', strtotime($r['remark_date']))) ?>
+                                        <?= e(formatDate($r['remark_date'])) ?>
                                         <?= $r['author'] ? ' &middot; ' . e($r['author']) : '' ?>
                                     </div>
                                 </div>

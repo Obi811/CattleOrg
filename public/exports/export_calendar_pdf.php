@@ -57,7 +57,7 @@ ob_start();
     th{background:#eee;}
 </style></head><body>
     <h1>Kalender &ndash; <?= e($monthNames[$month]) ?> <?= $year ?> (<?= e($farmName) ?>)</h1>
-    <div class="meta">Erstellt am <?= e(date('d.m.Y H:i')) ?> &middot; <?= count($events) ?> Ereignisse</div>
+    <div class="meta">Erstellt am <?= e(date('d.m.y H:i')) ?> &middot; <?= count($events) ?> Ereignisse</div>
     <table>
         <thead><tr><th>Datum</th><th>Ohrmarke</th><th>Typ</th><th>Info</th></tr></thead>
         <tbody>
@@ -65,7 +65,7 @@ ob_start();
             <tr><td colspan="4">Keine Ereignisse in diesem Monat.</td></tr>
         <?php else: foreach ($events as $ev): ?>
             <tr>
-                <td><?= e($ev['d']) ?></td>
+                <td><?= e(formatDate($ev['d'])) ?></td>
                 <td><?= e(formatEarTag($earTags[(int) $ev['cattle_id']] ?? '')) ?></td>
                 <td><?= e($ev['typ']) ?></td>
                 <td><?= e($ev['info']) ?></td>

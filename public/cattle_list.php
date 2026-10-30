@@ -226,7 +226,7 @@ $erweitertAktiv = ($geschlecht !== '' || $minAge !== '' || $maxAge !== '' || $st
                 <?php foreach ($cattle as $c): ?>
                     <tr>
                         <td><?= cattleLink((int) $c['id'], $c['ear_tag']) ?></td>
-                        <td><?= e($c['birth_date']) ?></td>
+                        <td><?= e(formatDate($c['birth_date'])) ?></td>
                         <td><?= e(calcAge($c['birth_date'])) ?></td>
                         <td><small><?= e($c['rasse']) ?></small></td>
                         <td><?= e($c['geschlecht']) ?></td>

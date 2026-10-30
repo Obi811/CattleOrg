@@ -33,7 +33,7 @@ if (!isset($nachbehandlungen)) { return; }
                                 Vorbehandlungen (14 T):
                                 <?php
                                     $parts = [];
-                                    foreach ($vb as $v) { $parts[] = e(date('d.m.', strtotime($v['treatment_date'])) . ' ' . $v['medication']); }
+                                    foreach ($vb as $v) { $parts[] = e(formatDate($v['treatment_date']) . ' ' . $v['medication']); }
                                     echo implode(', ', $parts);
                                 ?>
                             </div>
@@ -85,7 +85,7 @@ if (!isset($nachbehandlungen)) { return; }
                 <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
                     <div>
                         <div class="fw-semibold"><?= cattleLink((int) $r['id'], $r['ear_tag']) ?></div>
-                        <div class="small text-muted">Wartezeit endete am <?= e(date('d.m.Y', strtotime($r['wartezeit_ende']))) ?>. Bitte Probe wegschicken.</div>
+                        <div class="small text-muted">Wartezeit endete am <?= e(formatDate($r['wartezeit_ende'])) ?>. Bitte Probe wegschicken.</div>
                     </div>
                     <?php if ($canWrite): ?>
                     <form method="post" class="row g-1 align-items-end" style="max-width:320px;">

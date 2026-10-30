@@ -46,7 +46,7 @@ require_once __DIR__ . '/../templates/header.php';
             <?php else: foreach ($rows as $r): ?>
                 <tr>
                     <td><?= cattleLink((int) $r['id'], $r['ear_tag']) ?></td>
-                    <td><?= e($r['last_insem']) ?></td>
+                    <td><?= e(formatDate($r['last_insem'])) ?></td>
                     <td><?= e($r['bull_name']) ?></td>
                     <td><span class="badge bg-<?= $r['tage'] > 42 ? 'warning text-dark' : 'secondary' ?>"><?= (int) $r['tage'] ?> Tage</span></td>
                     <td class="text-end">
