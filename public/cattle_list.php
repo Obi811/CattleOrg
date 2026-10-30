@@ -65,9 +65,14 @@ if ($stall !== '') {
     $where[] = 'EXISTS (SELECT 1 FROM stall_history sh WHERE sh.cattle_id = c.id AND sh.farm_id = c.farm_id AND sh.end_date IS NULL AND sh.stall_name = :stall)';
     $params[':stall'] = $stall;
 }
-// Hat bereits gekalbt (existiert ein Tier, dessen Mutter diese Ohrmarke ist)
+// Hat bereits gekalbt: lebendes Kalb (Mutter über mutter_id ODER Ohrmarke)
+// ODER eine erfasste Totgeburt. Gleiche Logik wie die Kennzahl "Milchkühe".
 if ($hasCalving) {
-    $where[] = 'EXISTS (SELECT 1 FROM cattle k WHERE k.farm_id = c.farm_id AND k.mutter = c.ear_tag)';
+    $where[] = '('
+        . 'EXISTS (SELECT 1 FROM cattle k WHERE k.farm_id = c.farm_id AND k.id <> c.id'
+        . '        AND (k.mutter_id = c.id OR (k.mutter IS NOT NULL AND k.mutter <> "" AND k.mutter = c.ear_tag)))'
+        . ' OR EXISTS (SELECT 1 FROM stillbirths s WHERE s.farm_id = c.farm_id AND s.mother_cattle_id = c.id)'
+        . ')';
 }
 // Besamungsdatum-Bereich
 if ($insemFrom !== '') {
