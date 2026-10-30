@@ -24,7 +24,7 @@ $where = ['farm_id = :farm_id'];
 $params = [':farm_id' => $farmId];
 if ($status === 'Aktiv' || $status === 'Inaktiv') { $where[] = 'status = :status'; $params[':status'] = $status; }
 if ($rasse !== '') { $where[] = 'rasse = :rasse'; $params[':rasse'] = $rasse; }
-if ($q !== '') { $where[] = '(ear_tag LIKE :q OR mutter LIKE :q)'; $params[':q'] = '%' . $q . '%'; }
+if ($q !== '') { $where[] = 'ear_tag LIKE :q'; $params[':q'] = '%' . $q . '%'; }
 $whereSql = implode(' AND ', $where);
 
 $stmt = $db->prepare("SELECT ear_tag, birth_date, rasse, geschlecht, mutter, status FROM cattle WHERE $whereSql ORDER BY ear_tag");

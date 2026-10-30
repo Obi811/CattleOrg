@@ -47,7 +47,8 @@ if ($geschlecht === 'W' || $geschlecht === 'M') {
     $params[':geschlecht'] = $geschlecht;
 }
 if ($q !== '') {
-    $where[] = '(c.ear_tag LIKE :q OR c.mutter LIKE :q)';
+    // Freitextsuche ausschließlich in der Ohrmarke des Tieres (nicht Mutter).
+    $where[] = 'c.ear_tag LIKE :q';
     $params[':q'] = '%' . $q . '%';
 }
 // Alter in Monaten -> über Geburtsdatum
@@ -131,7 +132,7 @@ $erweitertAktiv = ($geschlecht !== '' || $minAge !== '' || $maxAge !== '' || $st
 <form class="card card-body mb-3" method="get">
     <div class="row g-2 align-items-end">
         <div class="col-md-4">
-            <label class="form-label mb-0">Suche (Ohrmarke/Mutter)</label>
+            <label class="form-label mb-0">Suche (Ohrmarke)</label>
             <input type="text" name="q" value="<?= e($q) ?>" class="form-control form-control-sm">
         </div>
         <div class="col-md-3">
