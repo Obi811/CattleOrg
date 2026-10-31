@@ -194,12 +194,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
                                                    WHERE pc2.cattle_id = c.id AND pc2.farm_id = c.farm_id))";
     }
     // Filter: Trockensteher (zentrale Logik, nur korrelierte Unterabfragen)
+    // HOTFIX Dashboard-500: Helper defensiv absichern. Fehlt die Funktion (z. B.
+    // weil der Server einen Zwischenstand der functions.php deployt hat), wird
+    // der Filter ignoriert statt in einen nackten HTTP-500 zu laufen.
     if ($trockensteherFilter) {
-        $where[] = trockensteherCattleCondition('c');
+        if (function_exists('trockensteherCattleCondition')) {
+            $where[] = trockensteherCattleCondition('c');
+        } else {
+            error_log('cattle: trockensteherCattleCondition() nicht verfuegbar – Filter ignoriert');
+        }
     }
     // Filter: Milchkuehe (mind. eine Kalbung/Totgeburt)
     if ($milchkuhFilter) {
-        $where[] = milchkuhCattleCondition('c');
+        if (function_exists('milchkuhCattleCondition')) {
+            $where[] = milchkuhCattleCondition('c');
+        } else {
+            error_log('cattle: milchkuhCattleCondition() nicht verfuegbar – Filter ignoriert');
+        }
     }
     $whereSql = implode(' AND ', $where);
 
