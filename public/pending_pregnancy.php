@@ -33,7 +33,7 @@ $stmt = $db->prepare($sql);
 $stmt->execute([':f1' => $farmId, ':f2' => $farmId]);
 $rows = $stmt->fetchAll();
 
-$pageTitle = 'Offene Trächtigkeit';
+$pageTitle = 'Offene Trächtigkeiten';
 require_once __DIR__ . '/../templates/header.php';
 ?>
 <h1 class="h3 mb-3">Offene Trächtigkeitskontrollen <span class="badge bg-secondary"><?= count($rows) ?></span></h1>

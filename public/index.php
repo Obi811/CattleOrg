@@ -50,18 +50,18 @@ $stmt = $db->prepare(
 $stmt->execute([':f' => $farmId]);
 $stats['milchkuehe'] = (int) $stmt->fetchColumn();
 
-// Offene Trächtigkeitskontrollen: besamt, aber noch keine Kontrolle danach
+// Trockensteher: aktive, weibliche Tiere, die einen Trockensteller/Versiegler
+// erhalten und seit dem letzten solchen Behandlungsdatum KEINE Kalbung hatten.
+// Logik zentral in trockensteherCattleCondition() (nur :f als Platzhalter,
+// EMULATE_PREPARES=false-sicher über korrelierte Unterabfragen).
+$trockCond = trockensteherCattleCondition('c');
 $stmt = $db->prepare(
-    'SELECT COUNT(DISTINCT i.cattle_id)
-     FROM inseminations i
-     WHERE i.farm_id = :f
-       AND NOT EXISTS (
-         SELECT 1 FROM pregnancy_checks p
-         WHERE p.cattle_id = i.cattle_id AND p.farm_id = i.farm_id AND p.check_date >= i.date
-       )'
+    'SELECT COUNT(*) FROM cattle c
+     WHERE c.farm_id = :f AND c.status = "Aktiv" AND c.geschlecht = "W"
+       AND ' . $trockCond
 );
 $stmt->execute([':f' => $farmId]);
-$stats['offene_traechtigkeit'] = (int) $stmt->fetchColumn();
+$stats['trockensteher'] = (int) $stmt->fetchColumn();
 
 // Behandlungen der letzten 30 Tage
 $stmt = $db->prepare(
@@ -106,12 +106,16 @@ $hemmVersendet    = $tasks['hemm_versendet'];
 $hemmResultToday  = $tasks['hemm_result_today'];
 $traechtigOffen   = $tasks['traechtig_offen'];
 $traechtigToday   = $tasks['traechtig_today'];
+$geplanteFaellig  = $tasks['geplante_faellig'];
 $letzteBehandlungen = $tasks['letzte_behandlungen'];
 $offenGesamt = $tasks['counts']['nachbehandlungen'] + $tasks['counts']['hemm_faellig']
-             + $tasks['counts']['hemm_versendet'] + $tasks['counts']['traechtig_offen'];
+             + $tasks['counts']['hemm_versendet'] + $tasks['counts']['traechtig_offen']
+             + $tasks['counts']['geplante_faellig'];
 
 // Dringlichkeits-Marker (rotes Abzeichen) je aufklappbarem Abschnitt
-$aufgabenUrgent = $tasks['counts']['hemm_faellig'] > 0;          // überfällige Hemmstoffproben
+$geplanteUeberfaellig = 0;
+foreach ($geplanteFaellig as $gp) { if ((int) ($gp['tage_ueberfaellig'] ?? 0) > 0) { $geplanteUeberfaellig++; } }
+$aufgabenUrgent = $tasks['counts']['hemm_faellig'] > 0 || $geplanteUeberfaellig > 0; // überfällige Hemmstoffproben/Behandlungen
 $lbCount        = $tasks['counts']['letzte_behandlungen'];
 $lbUrgent       = $tasks['counts']['letzte_behandlungen_wz'] > 0; // mind. eine aktive Wartezeit
 
@@ -167,10 +171,12 @@ details.js-collapsible[open] .collapse-chevron { transform: rotate(180deg); }
         </a>
     </div>
     <div class="col-6 col-md-3">
-        <div class="card text-center"><div class="card-body">
-            <div class="display-6"><?= $stats['offene_traechtigkeit'] ?></div>
-            <div class="text-muted">Offene Trächtigkeit</div>
-        </div></div>
+        <a class="text-decoration-none text-reset" href="<?= e(url('cattle_list.php')) ?>?status=Aktiv&amp;geschlecht=W&amp;trockensteher=1" title="Aktive Trockensteher (Trockensteller/Versiegler ohne Kalbung seither) anzeigen">
+            <div class="card text-center h-100"><div class="card-body">
+                <div class="display-6"><?= $stats['trockensteher'] ?></div>
+                <div class="text-muted">Trockensteher</div>
+            </div></div>
+        </a>
     </div>
     <div class="col-6 col-md-3">
         <div class="card text-center"><div class="card-body">

@@ -27,11 +27,22 @@ if (!function_exists('handleTaskPost')) {
         }
         $action = $_POST['action'] ?? '';
         $taskActions = ['weiterbehandeln', 'hemm_result', 'hemm_sent', 'preg_result', 'followup_dismiss'];
-        if (!in_array($action, $taskActions, true)) {
+        $plannedActions = ['plan_complete', 'plan_dismiss', 'plan_delete'];
+        if (!in_array($action, $taskActions, true) && !in_array($action, $plannedActions, true)) {
             return false;
         }
 
         requireCsrf();
+
+        // Geplante Behandlungen (Migration 015): Erledigt/Verwerfen/Löschen.
+        // Zentrale Logik in includes/planned_treatments.php (prüft Berechtigung
+        // treatments.write und Demo-Schutz selbst).
+        if (in_array($action, $plannedActions, true)) {
+            require_once __DIR__ . '/planned_treatments.php';
+            handlePlannedTreatmentAction($db, $farmId);
+            redirect($redirectTo);
+            return true; // nicht erreichbar (redirect beendet)
+        }
 
         $canTreat = hasPermission('treatments.write') && !isDemoBetrieb();
         $canPreg  = hasPermission('pregnancy.write')   && !isDemoBetrieb();

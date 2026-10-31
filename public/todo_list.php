@@ -34,10 +34,12 @@ $hemmVersendet    = $tasks['hemm_versendet'];
 $hemmResultToday  = $tasks['hemm_result_today'];
 $traechtigOffen   = $tasks['traechtig_offen'];
 $traechtigToday   = $tasks['traechtig_today'];
+$geplanteFaellig  = $tasks['geplante_faellig'];
 $letzteBehandlungen = $tasks['letzte_behandlungen'];
 
 $offenGesamt = $tasks['counts']['nachbehandlungen'] + $tasks['counts']['hemm_faellig']
-             + $tasks['counts']['hemm_versendet'] + $tasks['counts']['traechtig_offen'];
+             + $tasks['counts']['hemm_versendet'] + $tasks['counts']['traechtig_offen']
+             + $tasks['counts']['geplante_faellig'];
 
 $heute = date('Y-m-d');
 
