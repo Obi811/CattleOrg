@@ -56,6 +56,13 @@ Das Routing erfolgt ueber das Dateisystem unter `public/api/v1/<ressource>/index
 | `DUPLICATE`         | 409  | Eindeutigkeitskonflikt (z. B. Ohrmarke existiert)      |
 | `VALIDATION`        | 422  | Eingabe-/Validierungsfehler                            |
 | `RATE_LIMITED`      | 429  | Rate-Limit ueberschritten                              |
+| `INTERNAL_ERROR`    | 500  | Unerwartete Ausnahme (z. B. SQL-Fehler); Details in `message` und im PHP-Fehlerprotokoll |
+| `FATAL_ERROR`       | 500  | PHP-Fatal; Details in `message` und im PHP-Fehlerprotokoll |
+
+> Seit dem globalen Fehler-Handler liefert jeder Endpunkt auch bei unerwarteten
+> Serverfehlern eine JSON-Antwort im Standardformat (statt eines nackten HTTP-500
+> ohne Body). Die `message` enthaelt die technische Ursache und wird zusaetzlich
+> ins PHP-Fehlerprotokoll (cPanel) geschrieben.
 
 ---
 
