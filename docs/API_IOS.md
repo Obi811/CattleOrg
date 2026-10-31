@@ -480,6 +480,12 @@ transaktional (alles oder nichts).
 - `GET /api/v1/dashboard` enthält additiv:
   - `data.geplante_faellig[]` + `data.counts.geplante_faellig`
   - `data.kennzahlen.milchkuehe` und `data.kennzahlen.trockensteher`
+  - **Robustheit (Hotfix):** Diese additiven Felder sind serverseitig abgesichert.
+    Kann ein Teil nicht berechnet werden (z. B. fehlender Helper nach einem
+    Teil-Deploy), liefert der Endpunkt weiterhin HTTP 200 mit den Kern-Aufgaben;
+    `geplante_faellig` ist dann ein leeres Array und `kennzahlen.milchkuehe`/
+    `trockensteher` können `null` statt einer Zahl sein. Clients sollten diese
+    Felder daher als optional (nullable) behandeln.
 - `GET /api/v1/cattle` – neue Filter:
   - `trockensteher=1` – aktive, weibliche Tiere mit Trockensteller/Versiegler und
     ohne Kalbung seither.

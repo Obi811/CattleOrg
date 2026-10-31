@@ -3,6 +3,32 @@
 Alle nennenswerten Änderungen an CattleOrg werden hier dokumentiert.
 Format in Anlehnung an [Keep a Changelog](https://keepachangelog.com/de/).
 
+## [Unveröffentlicht] – Hotfix: Dashboard-API HTTP 500
+
+### Behoben
+- **`GET /api/v1/dashboard/` lieferte nach dem Server-Update ausnahmslos HTTP 500.**
+  Die beiden additiven Blöcke des Endpunkts – fällige geplante Behandlungen
+  (`loadPlannedDue`) sowie die Kennzahlen Milchkühe/Trockensteher
+  (`milchkuhCattleCondition`/`trockensteherCattleCondition`) – wurden
+  bedingungslos aufgerufen. Fehlte eine dieser Funktionen (z. B. weil auf dem
+  Server eine Zwischenversion der `includes/functions.php` lag) oder schlug ein
+  SQL-Teil fehl, führte das zu einem PHP-Fatal und damit zu einem nackten 500 –
+  obwohl die Kern-Aufgaben (Weiterbehandlungen, Hemmstoff, Trächtigkeits­kontrolle,
+  Wartezeit) problemlos ermittelbar waren.
+- **Härtung:** Beide Zusatzblöcke sind jetzt in `try { … } catch (\Throwable)`
+  gekapselt, mit `function_exists`-Prüfung und defensivem `require_once` der
+  benötigten Includes. Fällt ein Block aus, greift ein Fallback
+  (`geplante_faellig` → leeres Array, `kennzahlen.milchkuehe`/`trockensteher` →
+  `null`) und der Grund wird ins PHP-Fehlerprotokoll geschrieben. Das Dashboard
+  antwortet dadurch wieder mit HTTP 200 und den Kern-Aufgaben.
+- **Cattle-API** (`GET /api/v1/cattle/`): die Filter `milchkuh=1`/`trockensteher=1`
+  sind analog abgesichert – fehlt der Helper, wird der Filter ignoriert statt
+  einen 500 auszulösen.
+
+### Hinweis
+- Rückwärtskompatibel: nur additive Änderungen, gleiche JSON-Schlüssel. Die
+  Kennzahlen können im Fehlerfall `null` statt einer Zahl enthalten.
+
 ## [Unveröffentlicht] – Planung, Gruppenaktionen, Trockensteher
 
 ### Neu
