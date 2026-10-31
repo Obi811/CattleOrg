@@ -526,7 +526,7 @@ CattleOrg/
 
 ---
 
-## Neu in diesem Update (Planung, Gruppenaktionen, Trockensteher)
+## Neu in Version V1.0.5 (Planung, Gruppenaktionen, Trockensteher)
 
 - **Geplante Behandlungen** – Behandlungen auf ein festes Datum einplanen; sie
   erscheinen an dem Tag in den Aufgaben und im Kalender und werden per „Erledigt"
@@ -540,6 +540,12 @@ CattleOrg/
 - **API** – neue additive Endpunkte für geplante Behandlungen, Totgeburten,
   Gruppenaktionen sowie Kennzahlen Milchkühe/Trockensteher und Cattle-Filter
   `trockensteher=1` / `milchkuh=1`. Details: `docs/API_IOS.md`, Abschnitt 13.
+- **Stabilere API** – globaler Fehler-Handler: unerwartete Serverfehler liefern jetzt
+  eine JSON-Antwort mit Ursache (statt eines nackten HTTP-500) und schreiben die
+  Details ins PHP-Fehlerprotokoll. Das Dashboard (`GET /api/v1/dashboard`) ist gegen
+  fehlende Helfer/Teilausfälle gehärtet (try/catch, typ-stabile Antwort: Zahlen
+  bleiben Zahlen, Listen bleiben Listen) und antwortet auch bei Teilausfällen mit
+  den Kern-Aufgaben.
 
 Vollständige Liste der Änderungen: siehe `CHANGELOG.md`.
 

@@ -3,69 +3,12 @@
 Alle nennenswerten Änderungen an CattleOrg werden hier dokumentiert.
 Format in Anlehnung an [Keep a Changelog](https://keepachangelog.com/de/).
 
-## [Unveröffentlicht] – Hotfix: Dashboard-API HTTP 500
+## [V1.0.5] – 2026-10-31
 
-### Behoben
-- **`GET /api/v1/dashboard/` lieferte nach dem Server-Update ausnahmslos HTTP 500.**
-  Die beiden additiven Blöcke des Endpunkts – fällige geplante Behandlungen
-  (`loadPlannedDue`) sowie die Kennzahlen Milchkühe/Trockensteher
-  (`milchkuhCattleCondition`/`trockensteherCattleCondition`) – wurden
-  bedingungslos aufgerufen. Fehlte eine dieser Funktionen (z. B. weil auf dem
-  Server eine Zwischenversion der `includes/functions.php` lag) oder schlug ein
-  SQL-Teil fehl, führte das zu einem PHP-Fatal und damit zu einem nackten 500 –
-  obwohl die Kern-Aufgaben (Weiterbehandlungen, Hemmstoff, Trächtigkeits­kontrolle,
-  Wartezeit) problemlos ermittelbar waren.
-- **Härtung:** Beide Zusatzblöcke sind jetzt in `try { … } catch (\Throwable)`
-  gekapselt, mit `function_exists`-Prüfung und defensivem `require_once` der
-  benötigten Includes. Fällt ein Block aus, greift ein Fallback und der Grund wird
-  ins PHP-Fehlerprotokoll geschrieben. Das Dashboard antwortet dadurch wieder mit
-  HTTP 200 und den Kern-Aufgaben.
-- **Cattle-API** (`GET /api/v1/cattle/`): die Filter `milchkuh=1`/`trockensteher=1`
-  sind analog abgesichert – fehlt der Helper, wird der Filter ignoriert statt
-  einen 500 auszulösen.
-
-### Behoben (Nachtrag) – Client-Decodierungsfehler
-- **App meldete nach dem Fix „Datenverarbeitungsfehler / data couldn't be read".**
-  Ursache: Der Fallback lieferte `kennzahlen.milchkuehe`/`trockensteher` als `null`.
-  Ein striktes Client-Modell (Swift `Codable`) kann ein `null` an einer Zahl-Position
-  nicht decodieren → HTTP 200, aber Decodierungsfehler auf App-Seite.
-- **Lösung:** Die Antwort ist jetzt **typ-stabil**. Die Kennzahlen sind im Fehlerfall
-  `0` (eine Ganzzahl) statt `null`, `geplante_faellig` bleibt ein leeres Array (`[]`).
-  Die Datentypen der JSON-Antwort bleiben damit unabhängig vom Server-Zustand konstant.
-
-### Hinweis
-- Rückwärtskompatibel: nur additive Änderungen, gleiche JSON-Schlüssel. Die
-  Datentypen der Antwort sind konstant (Zahlen bleiben Zahlen, Listen bleiben Listen).
-
-## [Unveröffentlicht] – API-Fehlerbehandlung: globaler Handler (Fix HTTP 500 ohne JSON)
-
-### Behoben
-- **Nackter HTTP-500 ohne JSON-Body** bei unerwarteten Serverfehlern. Da PDO im
-  `ERRMODE_EXCEPTION` läuft, wurde eine nicht abgefangene Ausnahme (z. B. ein
-  SQL-Fehler in `/api/v1/dashboard/` oder `/api/v1/user/`) zu einem PHP-Fatal.
-  Mit `display_errors=0` in Produktion erhielt der Client dadurch einen leeren
-  HTTP-500 – die iOS-App konnte nur „Serverfehler 500" anzeigen, nicht die
-  eigentliche Ursache.
-
-### Neu
-- `public/api/v1/bootstrap_api.php`: globaler `set_exception_handler` und
-  `register_shutdown_function`. Unerwartete Ausnahmen/Fatals werden jetzt als
-  JSON-Fehler im Standardformat ausgeliefert
-  (`{"success":false,"error":{"code":"INTERNAL_ERROR"|"FATAL_ERROR","message":...}}`)
-  und zusätzlich mit Datei:Zeile ins PHP-Fehlerprotokoll geschrieben.
-- Dadurch zeigt die App die technische Ursache direkt an, und das Fehlerprotokoll
-  nennt die genaue Stelle – unabhängig davon, welcher Endpunkt betroffen ist.
-
-### Dokumentation
-- `docs/API_IOS.md`: Fehlercodes `INTERNAL_ERROR` und `FATAL_ERROR` ergänzt,
-  Hinweis zum globalen Fehler-Handler.
-
-### Hinweis
-- Die `message` enthält die technische Fehlerursache. Die API ist token-geschützt
-  (nur authentifizierte Clients). Soll die Meldung in Produktion generischer sein,
-  kann der Handler später hinter ein Debug-Flag gelegt werden.
-
-## [Unveröffentlicht] – Planung, Gruppenaktionen, Trockensteher
+Funktionsstand, der mit der App-Version **V1.0.5** (TestFlight) ausgeliefert wird.
+Enthält die Features „Planung, Gruppenaktionen, Trockensteher" (PR #10) sowie die
+beiden Server-Hotfixes rund um die Dashboard-API (globaler Fehler-Handler PR #11,
+Dashboard-500-Härtung PR #12), die zusammen mit diesem Stand live gegangen sind.
 
 ### Neu
 - **Geplante Behandlungen** (`planned_treatments`, Migration 015): Behandlungen für
@@ -90,14 +33,56 @@ Format in Anlehnung an [Keep a Changelog](https://keepachangelog.com/de/).
     `kennzahlen.milchkuehe` und `kennzahlen.trockensteher`
   - `GET /api/v1/cattle`: neue Filter `trockensteher=1` und `milchkuh=1`;
     Tier-Detail um `stillbirths[]` ergänzt (zusätzlich zu den Kalbungen)
+- **Globaler API-Fehler-Handler** (`public/api/v1/bootstrap_api.php`): `set_exception_handler`
+  und `register_shutdown_function`. Unerwartete Ausnahmen/Fatals werden jetzt als
+  JSON-Fehler im Standardformat ausgeliefert
+  (`{"success":false,"error":{"code":"INTERNAL_ERROR"|"FATAL_ERROR","message":...}}`)
+  und zusätzlich mit Datei:Zeile ins PHP-Fehlerprotokoll geschrieben. Dadurch zeigt
+  die App die technische Ursache direkt an, statt eines nackten HTTP-500 ohne Body.
 
 ### Geändert
 - „Offene Trächtigkeit" (Singular) überall als Listen-Überschrift/Bezeichnung zu
   „Offene Trächtigkeiten" (Plural) korrigiert.
 
+### Behoben
+- **`GET /api/v1/dashboard/` lieferte nach dem Server-Update ausnahmslos HTTP 500.**
+  Die beiden additiven Blöcke des Endpunkts – fällige geplante Behandlungen
+  (`loadPlannedDue`) sowie die Kennzahlen Milchkühe/Trockensteher
+  (`milchkuhCattleCondition`/`trockensteherCattleCondition`) – wurden
+  bedingungslos aufgerufen. Fehlte eine dieser Funktionen (z. B. weil auf dem
+  Server eine Zwischenversion der `includes/functions.php` lag) oder schlug ein
+  SQL-Teil fehl, führte das zu einem PHP-Fatal und damit zu einem nackten 500 –
+  obwohl die Kern-Aufgaben (Weiterbehandlungen, Hemmstoff, Trächtigkeits­kontrolle,
+  Wartezeit) problemlos ermittelbar waren.
+- **Härtung:** Beide Zusatzblöcke sind jetzt in `try { … } catch (\Throwable)`
+  gekapselt, mit `function_exists`-Prüfung und defensivem `require_once` der
+  benötigten Includes. Fällt ein Block aus, greift ein Fallback und der Grund wird
+  ins PHP-Fehlerprotokoll geschrieben. Das Dashboard antwortet dadurch wieder mit
+  HTTP 200 und den Kern-Aufgaben.
+- **Cattle-API** (`GET /api/v1/cattle/`): die Filter `milchkuh=1`/`trockensteher=1`
+  sind analog abgesichert – fehlt der Helper, wird der Filter ignoriert statt
+  einen 500 auszulösen.
+- **Client-Decodierungsfehler** („Datenverarbeitungsfehler / data couldn't be read")
+  behoben. Ursache: Der Fallback lieferte `kennzahlen.milchkuehe`/`trockensteher`
+  als `null`; ein striktes Client-Modell (Swift `Codable`) kann ein `null` an einer
+  Zahl-Position nicht decodieren (HTTP 200, aber Decodierungsfehler in der App).
+  Lösung: Die Antwort ist jetzt **typ-stabil** – die Kennzahlen sind im Fehlerfall
+  `0` (Ganzzahl) statt `null`, `geplante_faellig` bleibt ein leeres Array (`[]`).
+
 ### Migration
 - `migrations/015_create_planned_treatments.sql` (idempotent, Rollback unter
   `migrations/rollback/015_rollback.sql`).
+- `migrations/014_create_stillbirths.sql` (Totgeburten je Kuh, Rollback unter
+  `migrations/rollback/014_rollback.sql`).
+
+### Hinweis
+- Rückwärtskompatibel: nur additive Änderungen, gleiche JSON-Schlüssel und konstante
+  Datentypen (Zahlen bleiben Zahlen, Listen bleiben Listen).
+- Die `message` des Fehler-Handlers enthält die technische Fehlerursache. Die API ist
+  token-geschützt. Soll die Meldung in Produktion generischer sein, kann der Handler
+  später hinter ein Debug-Flag gelegt werden.
+- `docs/API_IOS.md`: Fehlercodes `INTERNAL_ERROR`/`FATAL_ERROR` sowie Robustheits-/
+  Typ-Stabilitäts-Hinweis zum Dashboard ergänzt.
 
 ## [V0.9.0]
 - Sicherheitsupdates dompdf 3.1.6 und PhpSpreadsheet 1.30.7.
