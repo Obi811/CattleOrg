@@ -17,17 +17,25 @@ Format in Anlehnung an [Keep a Changelog](https://keepachangelog.com/de/).
   Wartezeit) problemlos ermittelbar waren.
 - **Härtung:** Beide Zusatzblöcke sind jetzt in `try { … } catch (\Throwable)`
   gekapselt, mit `function_exists`-Prüfung und defensivem `require_once` der
-  benötigten Includes. Fällt ein Block aus, greift ein Fallback
-  (`geplante_faellig` → leeres Array, `kennzahlen.milchkuehe`/`trockensteher` →
-  `null`) und der Grund wird ins PHP-Fehlerprotokoll geschrieben. Das Dashboard
-  antwortet dadurch wieder mit HTTP 200 und den Kern-Aufgaben.
+  benötigten Includes. Fällt ein Block aus, greift ein Fallback und der Grund wird
+  ins PHP-Fehlerprotokoll geschrieben. Das Dashboard antwortet dadurch wieder mit
+  HTTP 200 und den Kern-Aufgaben.
 - **Cattle-API** (`GET /api/v1/cattle/`): die Filter `milchkuh=1`/`trockensteher=1`
   sind analog abgesichert – fehlt der Helper, wird der Filter ignoriert statt
   einen 500 auszulösen.
 
+### Behoben (Nachtrag) – Client-Decodierungsfehler
+- **App meldete nach dem Fix „Datenverarbeitungsfehler / data couldn't be read".**
+  Ursache: Der Fallback lieferte `kennzahlen.milchkuehe`/`trockensteher` als `null`.
+  Ein striktes Client-Modell (Swift `Codable`) kann ein `null` an einer Zahl-Position
+  nicht decodieren → HTTP 200, aber Decodierungsfehler auf App-Seite.
+- **Lösung:** Die Antwort ist jetzt **typ-stabil**. Die Kennzahlen sind im Fehlerfall
+  `0` (eine Ganzzahl) statt `null`, `geplante_faellig` bleibt ein leeres Array (`[]`).
+  Die Datentypen der JSON-Antwort bleiben damit unabhängig vom Server-Zustand konstant.
+
 ### Hinweis
 - Rückwärtskompatibel: nur additive Änderungen, gleiche JSON-Schlüssel. Die
-  Kennzahlen können im Fehlerfall `null` statt einer Zahl enthalten.
+  Datentypen der Antwort sind konstant (Zahlen bleiben Zahlen, Listen bleiben Listen).
 
 ## [Unveröffentlicht] – Planung, Gruppenaktionen, Trockensteher
 

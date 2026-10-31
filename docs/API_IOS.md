@@ -480,12 +480,14 @@ transaktional (alles oder nichts).
 - `GET /api/v1/dashboard` enthält additiv:
   - `data.geplante_faellig[]` + `data.counts.geplante_faellig`
   - `data.kennzahlen.milchkuehe` und `data.kennzahlen.trockensteher`
-  - **Robustheit (Hotfix):** Diese additiven Felder sind serverseitig abgesichert.
-    Kann ein Teil nicht berechnet werden (z. B. fehlender Helper nach einem
-    Teil-Deploy), liefert der Endpunkt weiterhin HTTP 200 mit den Kern-Aufgaben;
-    `geplante_faellig` ist dann ein leeres Array und `kennzahlen.milchkuehe`/
-    `trockensteher` können `null` statt einer Zahl sein. Clients sollten diese
-    Felder daher als optional (nullable) behandeln.
+  - **Robustheit (Hotfix):** Diese additiven Felder sind serverseitig abgesichert
+    und **typ-stabil**. Kann ein Teil nicht berechnet werden (z. B. fehlender
+    Helper nach einem Teil-Deploy), liefert der Endpunkt weiterhin HTTP 200 mit den
+    Kern-Aufgaben; `geplante_faellig` ist dann ein leeres Array (`[]`) und
+    `kennzahlen.milchkuehe`/`trockensteher` sind dann `0` (eine Ganzzahl) – niemals
+    `null`. Die Datentypen der Antwort bleiben damit konstant, sodass auch strikte
+    Client-Decoder (z. B. Swift `Codable` mit nicht-optionalen Feldern) die Antwort
+    immer verarbeiten können.
 - `GET /api/v1/cattle` – neue Filter:
   - `trockensteher=1` – aktive, weibliche Tiere mit Trockensteller/Versiegler und
     ohne Kalbung seither.

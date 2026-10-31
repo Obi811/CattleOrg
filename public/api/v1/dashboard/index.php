@@ -140,10 +140,12 @@ try {
 }
 
 // --- Kennzahlen Milchkuehe / Trockensteher (additiv) ---
-// HOTFIX Dashboard-500: Faellt eine Helper-Funktion/Spalte aus, bleibt die
-// jeweilige Kennzahl null; die Kern-Antwort wird dadurch nicht blockiert.
-$milchkuehe    = null;
-$trockensteher = null;
+// HOTFIX Dashboard-500: Die Antwort bleibt TYP-STABIL. Faellt eine
+// Helper-Funktion/Spalte aus, ist die jeweilige Kennzahl 0 (eine Ganzzahl),
+// niemals null – damit auch strikte Client-Modelle (iOS) die Antwort sicher
+// dekodieren koennen. Die Kern-Antwort wird dadurch nicht blockiert.
+$milchkuehe    = 0;
+$trockensteher = 0;
 try {
     if (function_exists('milchkuhCattleCondition')) {
         $milchCond = milchkuhCattleCondition('c');
@@ -154,12 +156,12 @@ try {
         $ms->execute([':f' => $farmId]);
         $milchkuehe = (int) $ms->fetchColumn();
     } else {
-        error_log('dashboard: milchkuhCattleCondition() nicht verfuegbar (functions.php Zwischenstand?) – Fallback null');
+        error_log('dashboard: milchkuhCattleCondition() nicht verfuegbar (functions.php Zwischenstand?) – Fallback 0');
     }
 } catch (\Throwable $e) {
     error_log('dashboard: kennzahl milchkuehe fehlgeschlagen: ' . $e->getMessage()
         . ' @ ' . $e->getFile() . ':' . $e->getLine());
-    $milchkuehe = null;
+    $milchkuehe = 0;
 }
 
 try {
@@ -172,12 +174,12 @@ try {
         $ts->execute([':f' => $farmId]);
         $trockensteher = (int) $ts->fetchColumn();
     } else {
-        error_log('dashboard: trockensteherCattleCondition() nicht verfuegbar (functions.php Zwischenstand?) – Fallback null');
+        error_log('dashboard: trockensteherCattleCondition() nicht verfuegbar (functions.php Zwischenstand?) – Fallback 0');
     }
 } catch (\Throwable $e) {
     error_log('dashboard: kennzahl trockensteher fehlgeschlagen: ' . $e->getMessage()
         . ' @ ' . $e->getFile() . ':' . $e->getLine());
-    $trockensteher = null;
+    $trockensteher = 0;
 }
 
 $counts = [
