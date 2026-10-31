@@ -143,6 +143,128 @@ if (!function_exists('treatmentTypes')) {
     }
 }
 
+if (!function_exists('drySealMedicationPatterns')) {
+    /**
+     * Namensmuster (Kleinbuchstaben, SQL-LIKE) zur Erkennung von Trockenstellern
+     * und Versieglern im Medikamentennamen. Zentrale, konfigurierbare Stelle.
+     *
+     * Hintergrund: Die Tabelle `medications` hat keine Kategorie-Spalte. Ein
+     * Trockensteller/Versiegler wird daher ueber den Medikamentennamen ODER
+     * ueber die Behandlungsart "Trockenstellen" erkannt (siehe
+     * drySealTreatmentCondition()). Neue Produktnamen hier ergaenzen.
+     */
+    function drySealMedicationPatterns(): array
+    {
+        return [
+            '%trockenstell%',   // Trockensteller
+            '%versiegl%',       // Versiegler / Zitzenversiegler
+            '%trocken%',        // generisch "trocken"
+            '%orbeseal%',       // Orbeseal (Versiegler)
+            '%cepravin%',       // Cepravin (Trockensteller)
+            '%bovaclox%',       // Bovaclox DC (Trockensteller)
+            '%ubro yellow%',    // Ubro Yellow (Trockensteller)
+        ];
+    }
+}
+
+if (!function_exists('drySealTreatmentCondition')) {
+    /**
+     * Liefert einen SQL-Boolean-Ausdruck, der wahr ist, wenn eine Behandlung
+     * ein Trockensteller/Versiegler ist: Behandlungsart "Trockenstellen" ODER
+     * Medikamentenname passt auf ein Muster aus drySealMedicationPatterns().
+     *
+     * Die Muster sind entwicklerseitige Konstanten (keine Nutzereingabe) und
+     * werden direkt und escaped in die Query eingebettet. Dadurch werden KEINE
+     * benannten Platzhalter verbraucht – wichtig wegen
+     * PDO::ATTR_EMULATE_PREPARES=false (Platzhalter duerfen je Query nicht
+     * mehrfach vorkommen).
+     *
+     * @param string $tAlias Alias/Spaltenpraefix der treatments-Zeile (z. B. "t")
+     */
+    function drySealTreatmentCondition(string $tAlias = 't'): string
+    {
+        $likes = [];
+        foreach (drySealMedicationPatterns() as $p) {
+            $esc = str_replace("'", "''", strtolower($p));
+            $likes[] = "LOWER($tAlias.medication) LIKE '$esc'";
+        }
+        $likeSql = $likes ? ('(' . implode(' OR ', $likes) . ')') : '0';
+        return "($tAlias.type = 'Trockenstellen' OR $likeSql)";
+    }
+}
+
+if (!function_exists('trockensteherCattleCondition')) {
+    /**
+     * Liefert einen SQL-Boolean-Ausdruck fuer die Kennzahl/den Filter
+     * "Trockensteher": Das Tier (Alias $cAlias) hat eine Behandlung mit einem
+     * Trockensteller/Versiegler (siehe drySealTreatmentCondition) erhalten und
+     * seit dem letzten solchen Behandlungsdatum KEINE Kalbung gehabt.
+     *
+     * Kalbung = lebendes Kalb (ueber mutter_id ODER mutter=Ohrmarke) ODER eine
+     * erfasste Totgeburt, jeweils mit birth_date >= letztem Trockenstell-Datum.
+     *
+     * Verwendet ausschliesslich korrelierte Unterabfragen auf $cAlias.farm_id /
+     * $cAlias.id / $cAlias.ear_tag und KEINE benannten Platzhalter – damit ist
+     * der Ausdruck mit PDO::ATTR_EMULATE_PREPARES=false kompatibel und kann
+     * mehrfach in einer Query stehen.
+     *
+     * @param string $cAlias Alias der cattle-Zeile (z. B. "c")
+     */
+    function trockensteherCattleCondition(string $cAlias = 'c'): string
+    {
+        $dry = drySealTreatmentCondition('t');
+        // Spaetestes Trockenstell-/Versiegler-Datum dieses Tieres
+        $lastDry = "(SELECT MAX(t.treatment_date) FROM treatments t
+                     WHERE t.farm_id = $cAlias.farm_id AND t.cattle_id = $cAlias.id
+                       AND t.treatment_date IS NOT NULL AND $dry)";
+        return "(
+            EXISTS (SELECT 1 FROM treatments t
+                    WHERE t.farm_id = $cAlias.farm_id AND t.cattle_id = $cAlias.id
+                      AND t.treatment_date IS NOT NULL AND $dry)
+            AND NOT EXISTS (
+                SELECT 1 FROM cattle k
+                WHERE k.farm_id = $cAlias.farm_id AND k.id <> $cAlias.id
+                  AND (k.mutter_id = $cAlias.id
+                       OR (k.mutter IS NOT NULL AND k.mutter <> '' AND k.mutter = $cAlias.ear_tag))
+                  AND k.birth_date IS NOT NULL AND k.birth_date >= $lastDry
+            )
+            AND NOT EXISTS (
+                SELECT 1 FROM stillbirths s
+                WHERE s.farm_id = $cAlias.farm_id AND s.mother_cattle_id = $cAlias.id
+                  AND s.birth_date >= $lastDry
+            )
+        )";
+    }
+}
+
+if (!function_exists('milchkuhCattleCondition')) {
+    /**
+     * Liefert einen SQL-Boolean-Ausdruck fuer die Kennzahl/den Filter
+     * "Milchkuh": aktives, weibliches Tier mit mindestens einer Kalbung
+     * (lebendes Kalb ueber mutter_id ODER mutter=Ohrmarke) ODER einer
+     * erfassten Totgeburt (stillbirths). Nur korrelierte Unterabfragen auf
+     * $cAlias, keine Platzhalter -> EMULATE_PREPARES=false-sicher und mehrfach
+     * verwendbar.
+     *
+     * @param string $cAlias Alias der cattle-Zeile (z. B. "c")
+     */
+    function milchkuhCattleCondition(string $cAlias = 'c'): string
+    {
+        return "(
+            EXISTS (
+                SELECT 1 FROM cattle k
+                WHERE k.farm_id = $cAlias.farm_id AND k.id <> $cAlias.id
+                  AND (k.mutter_id = $cAlias.id
+                       OR (k.mutter IS NOT NULL AND k.mutter <> '' AND k.mutter = $cAlias.ear_tag))
+            )
+            OR EXISTS (
+                SELECT 1 FROM stillbirths s
+                WHERE s.farm_id = $cAlias.farm_id AND s.mother_cattle_id = $cAlias.id
+            )
+        )";
+    }
+}
+
 if (!function_exists('calcAge')) {
     /**
      * Berechnet das Alter als lesbaren String "x J, y M" aus einem Geburtsdatum.

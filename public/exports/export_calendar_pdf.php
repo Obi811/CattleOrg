@@ -29,6 +29,10 @@ $events = array_merge($events, $i->fetchAll());
 $p = $db->prepare("SELECT check_date d, 'Trächtigkeit' typ, result info, cattle_id FROM pregnancy_checks WHERE farm_id=:f AND check_date BETWEEN :a AND :b");
 $p->execute([':f' => $farmId, ':a' => $first, ':b' => $last]);
 $events = array_merge($events, $p->fetchAll());
+// Geplante (offene) Behandlungen (Migration 015)
+$gp = $db->prepare("SELECT planned_date d, 'Geplant' typ, CONCAT(medication,' (',type,')') info, cattle_id FROM planned_treatments WHERE farm_id=:f AND status='geplant' AND planned_date BETWEEN :a AND :b");
+$gp->execute([':f' => $farmId, ':a' => $first, ':b' => $last]);
+$events = array_merge($events, $gp->fetchAll());
 
 // Ohrmarken nachladen
 $earTags = [];

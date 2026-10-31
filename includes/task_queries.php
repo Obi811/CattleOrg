@@ -152,6 +152,11 @@ if (!function_exists('loadTasks')) {
         $pt->execute([':f' => $farmId]);
         $traechtigToday = $pt->fetchAll();
 
+        // --- 4b. Geplante Behandlungen, die heute (oder ueberfaellig) anstehen ---
+        //        Logik zentral in includes/planned_treatments.php (loadPlannedDue).
+        require_once __DIR__ . '/planned_treatments.php';
+        $geplanteFaellig = loadPlannedDue($db, $farmId);
+
         // --- 5. Letzte Behandlungen (Kontext, keine offene Aufgabe): letzte 7 Tage, max. 20 ---
         //        Wartezeit wie gewohnt: Behandlungsdatum + max(wz_milk, wz_fleisch) aus der
         //        ueber den Namen verknuepften Medikamententabelle. Die Wartezeit wird ueber eine
@@ -197,12 +202,14 @@ if (!function_exists('loadTasks')) {
             'hemm_result_today' => $hemmResultToday,
             'traechtig_offen'   => $traechtigOffen,
             'traechtig_today'   => $traechtigToday,
+            'geplante_faellig'  => $geplanteFaellig,
             'letzte_behandlungen' => $letzteBehandlungen,
             'counts' => [
                 'nachbehandlungen' => count($nachbehandlungen),
                 'hemm_faellig'     => count($hemmFaellig),
                 'hemm_versendet'   => count($hemmVersendet),
                 'traechtig_offen'  => count($traechtigOffen),
+                'geplante_faellig' => count($geplanteFaellig),
                 'letzte_behandlungen'      => count($letzteBehandlungen),
                 'letzte_behandlungen_wz'   => $lbWartezeitAktiv,
             ],
